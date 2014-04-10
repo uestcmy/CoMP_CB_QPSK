@@ -67,7 +67,7 @@ QPSK3::QPSK3(QWidget *parent) :
        sockser_chl1=socket(AF_INET,SOCK_DGRAM,0);
        addrSrv_chl1.sin_addr.s_addr=htonl(INADDR_ANY);
        addrSrv_chl1.sin_family=AF_INET;
-       addrSrv_chl1.sin_port=htons(7015);//server : receive port number
+       addrSrv_chl1.sin_port=htons(7016);//server : receive port number
        bind(sockser_chl1,(sockaddr*)&addrSrv_chl1,sizeof(sockaddr));
 
        id1 = startTimer(100);
@@ -546,8 +546,8 @@ void QPSK3::sys_function(){
             //y = hw*x
             Matrix_mult441(hw2_44_re,hw2_44_im,x_re,x_im,y41_re,y41_im);
 
-            new_star[cnt_newstar][0] = y41_re[2][0];
-            new_star[cnt_newstar++][1] = y41_im[2][0];
+            new_star[cnt_newstar][0] = y41_re[3][0];
+            new_star[cnt_newstar++][1] = y41_im[3][0];
 
             if(cnt_newstar == 120){
                 cnt_newstar = 0;
