@@ -104,7 +104,42 @@ void Matrix_mult484(double a1_re[][8],double a1_im[][8],double b1_re[][4],double
     fclose(fp1);
     */
 }
-
+void Matrix_mult482(double a1_re[][8],double a1_im[][8],double b1_re[][2],double b1_im[][2],double c1_re[][2],double c1_im[][2])
+{
+    int i,j,k;
+    double sum_re,sum_im;
+    double temp_re,temp_im;
+    double *p_re;
+    double *p_im;
+    p_re=&temp_re;
+    p_im=&temp_im;
+    for(i=0;i<4;i++)
+    {
+        for(j=0;j<2;j++)
+        {
+            sum_re=0;
+            sum_im=0;
+            for(k=0;k<8;k++)
+            {
+                mult(a1_re[i][k],a1_im[i][k],b1_re[k][j],b1_im[k][j],p_re,p_im);
+                sum_re=sum_re+temp_re;
+                sum_im=sum_im+temp_im;
+            }
+            c1_re[i][j]=sum_re;
+            c1_im[i][j]=sum_im;
+        }
+    }
+/*
+    FILE *fp1,*fp2;
+    fp1 = fopen("data.txt","w");
+    for( int i = 0 ; i < 4 ; i++){
+        for( int j = 0 ; j < 4 ; j++ ){
+            fprintf(fp1,"%lf\t",c1_re[i][j]);
+        }fprintf(fp1,"\n");
+    }
+    fclose(fp1);
+    */
+}
 void Matrix_mult844(double a1_re[][4],double a1_im[][4],double b1_re[][4],double b1_im[][4],double c1_re[][4],double c1_im[][4])
 {
     int i,j,k;

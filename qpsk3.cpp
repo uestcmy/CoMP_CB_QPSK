@@ -67,7 +67,7 @@ QPSK3::QPSK3(QWidget *parent) :
        sockser_chl1=socket(AF_INET,SOCK_DGRAM,0);
        addrSrv_chl1.sin_addr.s_addr=htonl(INADDR_ANY);
        addrSrv_chl1.sin_family=AF_INET;
-       addrSrv_chl1.sin_port=htons(7013);//server : receive port number
+       addrSrv_chl1.sin_port=htons(7017);//server : receive port number
        bind(sockser_chl1,(sockaddr*)&addrSrv_chl1,sizeof(sockaddr));
 
        id1 = startTimer(100);
@@ -476,6 +476,9 @@ void QPSK3::sys_function(){
     double w84_re[8][4];
     double w84_im[8][4];
 
+    double hw42_re[4][2];
+    double hw42_im[4][2];
+
     double hw44_re[4][4];
     double hw44_im[4][4];
 /*
@@ -517,6 +520,26 @@ void QPSK3::sys_function(){
             chol_inv(mat44_tmp_re,mat44_tmp_im,mat44_inv_re,mat44_inv_im);
             Matrix_mult844(mat84_tmp_re,mat84_tmp_im, mat44_inv_re,mat44_inv_im, w84_re,w84_im);
             Matrix_mult484(mat48_2_re,mat48_2_im,w84_re,w84_im,hw44_re,hw44_im);
+
+         //   Matrix_mult482(mat48_2_re,mat48_2_im,w84_re,w84_im,hw42_re,hw42_im);
+
+            for( int i = 0 ; i < 4 ; i++ ){
+                for( int j = 0 ; j < 2 ; j++){
+                    hw42_re[i][j] = hw44_re[i][j];
+                    hw42_im[i][j] = hw44_im[i][j];
+                }
+            }
+
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw42_re[i][0] << hw42_re[i][1];
+            }
+
+            qDebug()  << "\n";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw42_im[i][0] << hw42_im[i][1];
+            }
+            qDebug()  << " -----------------\n";
+
             // jiu xiangpian
             double alpha=0;
 
@@ -545,8 +568,6 @@ void QPSK3::sys_function(){
             }
             //y = hw*x
             Matrix_mult441(hw2_44_re,hw2_44_im,x_re,x_im,y41_re,y41_im);
-
-
 
             new_star[cnt_newstar][0] = y41_re[0][0];
             new_star[cnt_newstar++][1] = y41_im[0][0];
@@ -649,8 +670,8 @@ void QPSK3::sys_function(){
     for( int i = 0 ; i < 4; i++){
         qDebug() << mat48_2_re[i][0] << mat48_2_re[i][1] << mat48_2_re[i][2] << mat48_2_re[i][3] << mat48_2_re[i][4] << mat48_2_re[i][5] << mat48_2_re[i][6] << mat48_2_re[i][7];
         }qDebug()<<"\n";
-
 */
+
 
    //Matrix_mult484(mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im, mat44_tmp_re,mat44_tmp_im);
 /*
