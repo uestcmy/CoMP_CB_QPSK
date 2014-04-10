@@ -1,4 +1,4 @@
-QT+=opengl
+QT += opengl
 
 HEADERS += \
     qpsk3.h
