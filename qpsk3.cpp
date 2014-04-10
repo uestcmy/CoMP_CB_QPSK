@@ -67,7 +67,7 @@ QPSK3::QPSK3(QWidget *parent) :
        sockser_chl1=socket(AF_INET,SOCK_DGRAM,0);
        addrSrv_chl1.sin_addr.s_addr=htonl(INADDR_ANY);
        addrSrv_chl1.sin_family=AF_INET;
-       addrSrv_chl1.sin_port=htons(7016);//server : receive port number
+       addrSrv_chl1.sin_port=htons(7020);//server : receive port number
        bind(sockser_chl1,(sockaddr*)&addrSrv_chl1,sizeof(sockaddr));
 
        id1 = startTimer(100);
@@ -501,15 +501,15 @@ void QPSK3::sys_function(){
             // get data t1
             for (int i = 0;i<4;i++){
                 for(int j=0;j<8;j++){
-                    mat48_1_re[i][j]=data1[i*256+j + 64*t + 8*f ][0];
-                    mat48_1_im[i][j]=data1[i*256+j + 64*t + 8*f  ][1];
+                    mat48_1_re[i][j]=data1[i*256+j + 64*t + 8*f +32][0];
+                    mat48_1_im[i][j]=data1[i*256+j + 64*t + 8*f  +32][1];
                 }
             }
             // get data t2
             for (int i = 0;i<4;i++){
                 for(int j=0;j<8;j++){
-                    mat48_2_re[i][j]=data1[i*256+j + 64*t+ 64 + 8*f ][0];
-                    mat48_2_im[i][j]=data1[i*256+j + 64*t  + 64 + 8*f  ][1];
+                    mat48_2_re[i][j]=data1[i*256+j + 64*t+ 64 + 8*f+32 ][0];
+                    mat48_2_im[i][j]=data1[i*256+j + 64*t  + 64 + 8*f +32 ][1];
                 }
             }
             hermitian( 4,8,mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im );
@@ -546,8 +546,8 @@ void QPSK3::sys_function(){
             //y = hw*x
             Matrix_mult441(hw2_44_re,hw2_44_im,x_re,x_im,y41_re,y41_im);
 
-            new_star[cnt_newstar][0] = y41_re[3][0];
-            new_star[cnt_newstar++][1] = y41_im[3][0];
+            new_star[cnt_newstar][0] = y41_re[2][0];
+            new_star[cnt_newstar++][1] = y41_im[2][0];
 
             if(cnt_newstar == 120){
                 cnt_newstar = 0;
