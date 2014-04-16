@@ -97,8 +97,8 @@ void QPSK3::resizeGL(int w, int h)
     glLoadIdentity();
     //luPerspective(40.0, (GLfloat)w/(GLfloat)h, 2, 30.0);
     //gluPerspective(40,1.33, 2, 30.0);
-    //glOrtho (-1.5 * ( GLfloat ) w / ( GLfloat ) h, 2.3* ( GLfloat ) w / ( GLfloat ) h, -2, 2, -15.0, 15.0);
-     glFrustum (-3* ( GLfloat ) w / ( GLfloat ) h, 3* ( GLfloat ) w / ( GLfloat ) h, -2, 2, 5, 10.0);
+    glOrtho (-2.5 * ( GLfloat ) w / ( GLfloat ) h, 2.3* ( GLfloat ) w / ( GLfloat ) h, -1.8, 1.8, -15.0, 15.0);
+    // glFrustum (-2.8* ( GLfloat ) w / ( GLfloat ) h, 2.8* ( GLfloat ) w / ( GLfloat ) h, -2, 2, 5, 10.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -649,16 +649,19 @@ void QPSK3::sys_function(){
     qDebug() << "y im is "<< y41_im[0][0] <<  y41_im[1][0] <<  y41_im[2][0] <<  y41_im[3][0] ;
     qDebug() << "x  re is "<< pilot[0][0] <<  pilot[1][0] <<  pilot[2][0] <<  pilot[3][0] ;
     qDebug() << "x im is "<< pilot[0][1] <<  pilot[1][1] <<  pilot[2][1] <<  pilot[3][1] ;
-
+/*
     new_star[cnt_newstar][0] = y41_re[1][0];
     new_star[cnt_newstar++][1] = y41_im[1][0];
+*/
 
     new_star[cnt_newstar][0] = y41_re[0][0];
     new_star[cnt_newstar++][1] = y41_im[0][0];
+    /*
     new_star[cnt_newstar][0] = y41_re[2][0];
     new_star[cnt_newstar++][1] = y41_im[2][0];
     new_star[cnt_newstar][0] = y41_re[3][0];
     new_star[cnt_newstar++][1] = y41_im[3][0];
+    */
     if(cnt_newstar == 60){
         cnt_newstar = 0;
     }
