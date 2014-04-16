@@ -98,7 +98,8 @@ void QPSK3::resizeGL(int w, int h)
     //luPerspective(40.0, (GLfloat)w/(GLfloat)h, 2, 30.0);
     //gluPerspective(40,1.33, 2, 30.0);
     //glOrtho (-1.5 * ( GLfloat ) w / ( GLfloat ) h, 2.3* ( GLfloat ) w / ( GLfloat ) h, -2, 2, -15.0, 15.0);
-     glFrustum (-3* ( GLfloat ) w / ( GLfloat ) h, 3* ( GLfloat ) w / ( GLfloat ) h, -2, 2, 5, 10.0);
+    // glFrustum (-3* ( GLfloat ) w / ( GLfloat ) h, 3* ( GLfloat ) w / ( GLfloat ) h, -2, 2, 5, 10.0);
+      glOrtho (-2.5 * ( GLfloat ) w / ( GLfloat ) h, 2.3* ( GLfloat ) w / ( GLfloat ) h, -1.8, 1.8, -15.0, 15.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -536,6 +537,7 @@ void QPSK3::sys_function(){
             double x_im[4][1];
             double y41_re[4][1];
             double y41_im[4][1];
+
             for( int ip = 0 ; ip < 4 ; ip++ ){
                 x_re[ip][0] = pilot[cnt_pilot][0];
                 x_im[ip][0] = pilot[cnt_pilot++][1];
@@ -543,6 +545,7 @@ void QPSK3::sys_function(){
                     cnt_pilot = 0;
                 }
             }
+
             //y = hw*x
             Matrix_mult441(hw2_44_re,hw2_44_im,x_re,x_im,y41_re,y41_im);
 
@@ -629,13 +632,14 @@ void QPSK3::sys_function(){
 
     new_star[cnt_newstar][0] = y41_re[1][0];
     new_star[cnt_newstar++][1] = y41_im[1][0];
-
+/*
     new_star[cnt_newstar][0] = y41_re[0][0];
     new_star[cnt_newstar++][1] = y41_im[0][0];
     new_star[cnt_newstar][0] = y41_re[2][0];
     new_star[cnt_newstar++][1] = y41_im[2][0];
     new_star[cnt_newstar][0] = y41_re[3][0];
     new_star[cnt_newstar++][1] = y41_im[3][0];
+    */
     if(cnt_newstar == 60){
         cnt_newstar = 0;
     }

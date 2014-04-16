@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 */
 
     QPSK3 w3;
-    w3.resize(251,250);
+    w3.setGeometry(1200,255, 251,220);
     w3.show();
     w3.setWindowTitle("Stream2 UE1( Port:7018)");
 
