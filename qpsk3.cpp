@@ -98,7 +98,8 @@ void QPSK3::resizeGL(int w, int h)
     //luPerspective(40.0, (GLfloat)w/(GLfloat)h, 2, 30.0);
     //gluPerspective(40,1.33, 2, 30.0);
     //glOrtho (-1.5 * ( GLfloat ) w / ( GLfloat ) h, 2.3* ( GLfloat ) w / ( GLfloat ) h, -2, 2, -15.0, 15.0);
-     glFrustum (-3* ( GLfloat ) w / ( GLfloat ) h, 3* ( GLfloat ) w / ( GLfloat ) h, -2, 2, 5, 10.0);
+   //  glFrustum (-3* ( GLfloat ) w / ( GLfloat ) h, 3* ( GLfloat ) w / ( GLfloat ) h, -2, 2, 5, 10.0);
+     glOrtho (-2.5 * ( GLfloat ) w / ( GLfloat ) h, 2.3* ( GLfloat ) w / ( GLfloat ) h, -1.8, 1.8, -15.0, 15.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -500,6 +501,7 @@ void QPSK3::sys_function(){
         for(int f = 0 ; f < 4 ; f ++){//freq
             // get data t1
             for (int i = 0;i<4;i++){
+
                 for(int j=0;j<8;j++){
                     mat48_1_re[i][j]=data1[i*256+j + 64*t + 8*f +32][0];
                     mat48_1_im[i][j]=data1[i*256+j + 64*t + 8*f  +32][1];
@@ -507,16 +509,26 @@ void QPSK3::sys_function(){
             }
             // get data t2
             for (int i = 0;i<4;i++){
+
                 for(int j=0;j<8;j++){
                     mat48_2_re[i][j]=data1[i*256+j + 64*t+ 64 + 8*f+32 ][0];
                     mat48_2_im[i][j]=data1[i*256+j + 64*t  + 64 + 8*f +32 ][1];
                 }
+
             }
             hermitian( 4,8,mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im );
             Matrix_mult484(mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im, mat44_tmp_re,mat44_tmp_im);
             chol_inv(mat44_tmp_re,mat44_tmp_im,mat44_inv_re,mat44_inv_im);
             Matrix_mult844(mat84_tmp_re,mat84_tmp_im, mat44_inv_re,mat44_inv_im, w84_re,w84_im);
             Matrix_mult484(mat48_2_re,mat48_2_im,w84_re,w84_im,hw44_re,hw44_im);
+
+            for( int i = 0 ; i < 4; i++){
+                qDebug() << hw44_re[i][0]  << hw44_re[i][1]  << hw44_re[i][2]  << hw44_re[i][3];
+            }qDebug() << "\n";
+
+            for( int i = 0 ; i < 4; i++){
+                qDebug() << hw44_im[i][0]  << hw44_im[i][1]  << hw44_im[i][2]  << hw44_im[i][3];
+            }qDebug() << "------\n";
             // jiu xiangpian
             double alpha=0;
 
@@ -555,7 +567,7 @@ void QPSK3::sys_function(){
         }
     }
 
-   #ifdef onetime
+   #ifdef onetime123
     for (int i = 0;i<4;i++){
         for(int j=0;j<8;j++){
             mat48_1_re[i][j]=data1[i*256+j][0];
@@ -626,7 +638,7 @@ void QPSK3::sys_function(){
     qDebug() << "y im is "<< y41_im[0][0] <<  y41_im[1][0] <<  y41_im[2][0] <<  y41_im[3][0] ;
     qDebug() << "x  re is "<< pilot[0][0] <<  pilot[1][0] <<  pilot[2][0] <<  pilot[3][0] ;
     qDebug() << "x im is "<< pilot[0][1] <<  pilot[1][1] <<  pilot[2][1] <<  pilot[3][1] ;
-
+/*
     new_star[cnt_newstar][0] = y41_re[1][0];
     new_star[cnt_newstar++][1] = y41_im[1][0];
 
@@ -634,6 +646,7 @@ void QPSK3::sys_function(){
     new_star[cnt_newstar++][1] = y41_im[0][0];
     new_star[cnt_newstar][0] = y41_re[2][0];
     new_star[cnt_newstar++][1] = y41_im[2][0];
+    */
     new_star[cnt_newstar][0] = y41_re[3][0];
     new_star[cnt_newstar++][1] = y41_im[3][0];
     if(cnt_newstar == 60){
