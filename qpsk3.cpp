@@ -448,6 +448,8 @@ void QPSK3::timerEvent(QTimerEvent *event){
 
 
 void QPSK3::sys_function(){
+
+
     // (2+i) *(3-i)
     /*
     double re,im;
@@ -567,115 +569,7 @@ void QPSK3::sys_function(){
         }
     }
 
-   #ifdef onetime
-    for (int i = 0;i<4;i++){
-        for(int j=0;j<8;j++){
-            mat48_1_re[i][j]=data1[i*256+j][0];
-            mat48_1_im[i][j]=data1[i*256+j][1];
-        }
-    }
 
-    for (int i = 0;i<4;i++){
-        for(int j=0;j<8;j++){
-            mat48_2_re[i][j]=data1[i*256+j+64][0];
-            mat48_2_im[i][j]=data1[i*256+j+64][1];
-        }
-    }
-    hermitian( 4,8,mat48_1_re,mat48_1_im,
-                    mat84_tmp_re,mat84_tmp_im );
-
-    Matrix_mult484(mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im, mat44_tmp_re,mat44_tmp_im);
-    chol_inv(mat44_tmp_re,mat44_tmp_im,mat44_inv_re,mat44_inv_im);
-    Matrix_mult844(mat84_tmp_re,mat84_tmp_im, mat44_inv_re,mat44_inv_im, w84_re,w84_im);
-    Matrix_mult484(mat48_2_re,mat48_2_im,w84_re,w84_im,hw44_re,hw44_im);
-
-
-    double x_re[4][1];
-    double x_im[4][1];
-    double y41_re[4][1];
-    double y41_im[4][1];
-
-    for( int i = 0 ; i < 4 ; i++ ){
-        x_re[i][0] = pilot[i][0];
-        x_im[i][0] = pilot[i][1];
-    }
-
-
-
-    double alpha=0;
-
-    for (int i=0;i<4;i++){
-        alpha += 0.25 * atan(hw44_im[i][i]/hw44_re[i][i]);
-
-    }
-    double hw2_44_re[4][4];
-    double hw2_44_im[4][4];
-    for(int i = 0 ; i < 4 ; i++ ){
-        for( int j = 0 ; j < 4 ; j++ ){
-            mult(cos(alpha),-sin(alpha),hw44_re[i][j],hw44_im[i][j],&hw2_44_re[i][j],&hw2_44_im[i][j]);
-        }
-    }
-    Matrix_mult441(hw2_44_re,hw2_44_im,x_re,x_im,y41_re,y41_im);
-
-/*
-    for( int i = 0 ; i < 4; i++){
-        for( int j = 0 ; j < 4 ; j++ ){
-            fprintf(fp1,"%lf\t",hw44_re[i][j]);
-        }fprintf(fp1,"\n");
-    }
-    for( int i = 0 ; i < 4; i++){
-        for( int j = 0 ; j < 4 ; j++ ){
-            fprintf(fp1,"%lf\t",hw44_im[i][j]);
-        }fprintf(fp1,"\n");
-    }
-    */
-    for( int i = 0 ; i < 4; i++){
-        qDebug() << hw44_re[i][0] << hw44_re[i][1] << hw44_re[i][2] << hw44_re[i][3];// << mat48_1_re[i][4] << mat48_1_re[i][5] << mat48_1_re[i][6] << mat48_1_re[i][7];
-    }qDebug()<<"\n";
-    for( int i = 0 ; i < 4; i++){
-        qDebug() << hw44_im[i][0] << hw44_im[i][1] << hw44_im[i][2] << hw44_im[i][3] ;//<< hw44_im[i][4] << mat48_2_re[i][5] << mat48_2_re[i][6] << mat48_2_re[i][7];
-        }qDebug()<<"\n";
-
-    qDebug() << "y  re is "<< y41_re[0][0] <<  y41_re[1][0] <<  y41_re[2][0] <<  y41_re[3][0] ;
-    qDebug() << "y im is "<< y41_im[0][0] <<  y41_im[1][0] <<  y41_im[2][0] <<  y41_im[3][0] ;
-    qDebug() << "x  re is "<< pilot[0][0] <<  pilot[1][0] <<  pilot[2][0] <<  pilot[3][0] ;
-    qDebug() << "x im is "<< pilot[0][1] <<  pilot[1][1] <<  pilot[2][1] <<  pilot[3][1] ;
-
-    /*
-    new_star[cnt_newstar][0] = y41_re[1][0];
-    new_star[cnt_newstar++][1] = y41_im[1][0];
-
-    new_star[cnt_newstar][0] = y41_re[0][0];
-    new_star[cnt_newstar++][1] = y41_im[0][0];
-    */
-    new_star[cnt_newstar][0] = y41_re[2][0];
-    new_star[cnt_newstar++][1] = y41_im[2][0];
-    /*
-    new_star[cnt_newstar][0] = y41_re[3][0];
-    new_star[cnt_newstar++][1] = y41_im[3][0];
-    */
-    if(cnt_newstar == 60){
-        cnt_newstar = 0;
-    }
-#endif
-/*
-    for( int i = 0 ; i < 4; i++){
-        qDebug() << mat48_1_re[i][0] << mat48_1_re[i][1] << mat48_1_re[i][2] << mat48_1_re[i][3] << mat48_1_re[i][4] << mat48_1_re[i][5] << mat48_1_re[i][6] << mat48_1_re[i][7];
-    }qDebug()<<"\n";
-    for( int i = 0 ; i < 4; i++){
-        qDebug() << mat48_2_re[i][0] << mat48_2_re[i][1] << mat48_2_re[i][2] << mat48_2_re[i][3] << mat48_2_re[i][4] << mat48_2_re[i][5] << mat48_2_re[i][6] << mat48_2_re[i][7];
-        }qDebug()<<"\n";
-*/
-
-
-   //Matrix_mult484(mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im, mat44_tmp_re,mat44_tmp_im);
-/*
-    for( int i = 0 ; i < 4 ; i++){
-         for( int j = 0 ; j < 4 ; j++){
-             mat44_tmp_re[i][1] = 1;
-         }
-    }
-    */
 
 
 
