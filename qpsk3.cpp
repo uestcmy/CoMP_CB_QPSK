@@ -71,7 +71,7 @@ QPSK3::QPSK3(QWidget *parent) :
        bind(sockser_chl1,(sockaddr*)&addrSrv_chl1,sizeof(sockaddr));
 
        id1 = startTimer(100);
-
+       pdata = (&new_star[0][0]) ;
 
 }
 
@@ -278,146 +278,13 @@ void QPSK3::timerEvent(QTimerEvent *event){
        // qDebug() << data1[i][0] << data1[i][1] ;//<<data2[i][0] <<data2[i][1] <<endl;
     }//for i
 
-    sys_function();//data >>   function >> HWS
-
-    double pilotH11[200][2] = {0};
-    int cntH11 = 0;
-    for( int i = 0 ; i < 1200 ; i++){
-        if(i % 6 == 0){//position for the pilot H11
-            pilotH11[cntH11][0] = data1[i][0];
-            pilotH11[cntH11][1] = data1[i][1];
-            pilot2[cntH11].value = sqrt(data1[i][0]*data1[i][0]+data1[i][1]*data1[i][1]);
-            cntH11 += 1;
-        }//if
-    }
-    for( int i = 0 ; i < 200 ; i++){
-        for( int j = i+1 ; j < 200 ; j++){
-            if( pilot2[i].value - pilot2[j].value  < 1e-7 ){
-                struct pilotid  tmp = pilot2[i];
-                pilot2[i] = pilot2[j];
-                pilot2[j] = tmp;
-            }
-        }
-    }
-    /*commented by hh
-    for( int i = 0 ; i < 100 ; i++ ){
-        pilotH11[pilot2[i+100].id ][0] = pilotH11[pilot2[i].id][0];
-        pilotH11[pilot2[i+100].id ][1] = pilotH11[pilot2[i].id][1];
-        pilot[pilot2[i+100].id][0] = pilot[pilot2[i].id][0];
-        pilot[pilot2[i+100].id][1] = pilot[pilot2[i].id][1];
-
-        data1[pilot2[i+100].id*6][0] = data1[pilot2[i].id*6][0];
-        data1[pilot2[i+100].id*6][1] = data1[pilot2[i].id*6][1];
-
-        data1[pilot2[i+100].id*6+1][0] = data1[pilot2[i].id*6+1][0];
-        data1[pilot2[i+100].id*6+1][1] = data1[pilot2[i].id*6+1][1];
-
-        data1[pilot2[i+100].id*6+2][0] = data1[pilot2[i].id*6+2][0];
-        data1[pilot2[i+100].id*6+2][1] = data1[pilot2[i].id*6+2][1];
-
-        data1[pilot2[i+100].id*6+3][0] = data1[pilot2[i].id*6+3][0];
-        data1[pilot2[i+100].id*6+3][1] = data1[pilot2[i].id*6+3][1];
-
-        data1[pilot2[i+100].id*6+4][0] = data1[pilot2[i].id*6+4][0];
-        data1[pilot2[i+100].id*6+4][1] = data1[pilot2[i].id*6+4][1];
-
-        data1[pilot2[i+100].id*6+5][0] = data1[pilot2[i].id*6+5][0];
-        data1[pilot2[i+100].id*6+5][1] = data1[pilot2[i].id*6+5][1];
-
-    }
-    */
-
-/*
-    for( int i = 0 ; i < 200 ; i++ ){
-        qDebug() << pilot2[i].value << pilot2[i].id ;
-    }
-*/
-    double H11[200][2] = {0};
-    double absH11[200] = {0};
-    double absH11_6[1200][2] = {0};
 
 
-    //qDebug() << "  ----  ";
-    for( int i = 0 ; i < 200 ; i++ ){
-
-        H11[i][0] = (pilotH11[i][0]*pilot[i*6][0]+pilotH11[i][1]*pilot[i*6][1])/(pilot[i*6][0]*pilot[i*6][0]+pilot[i*6][1]*pilot[i*6][1]);
-        H11[i][1] = (pilotH11[i][1]*pilot[i*6][0]-pilotH11[i][0]*pilot[i*6][1])/(pilot[i*6][0]*pilot[i*6][0]+pilot[i*6][1]*pilot[i*6][1]);
-        //qDebug() << H11[i][0] << H11[i][1]  << "  angle :  "<<atan(H11[i][1]/H11[i][0])<<"pilot"<<pilot[i*6][0]<<"|"<<pilot[i*6][1];
-
-        //qDebug() << "  angle :  "<<atan(H11[i][1]/H11[i][0]);
-        absH11[i] = sqrt(H11[i][0]*H11[i][0] + H11[i][1]*H11[i][1]);
-
-    }//for i
-
-    //interp :edited by hh
-    for(int i=0;i<200;i++){
-        absH11_6[i*6][0] =  H11[i][0];
-        absH11_6[i*6 + 1 ][0] =  H11[i][0];
-        absH11_6[i*6 + 2 ][0] =  H11[i][0];
-        absH11_6[i*6 + 3][0]=  H11[i][0];
-        absH11_6[i*6 + 4 ][0] =  H11[i][0];
-        absH11_6[i*6 + 5 ][0] =  H11[i][0];
-
-        absH11_6[i*6][1] =  H11[i][1];
-        absH11_6[i*6 + 1 ][1] =  H11[i][1];
-        absH11_6[i*6 + 2 ][1] =  H11[i][1];
-        absH11_6[i*6 + 3][1]=  H11[i][1];
-        absH11_6[i*6 + 4 ][1] =  H11[i][1];
-        absH11_6[i*6 + 5 ][1] =  H11[i][1];
-        absH11_6[i*6 + 6 ][1] =  H11[i][1];
-
-        /*
-        absH11_6[i*12][0] =  H11[2*i][0];
-        absH11_6[i*12 + 1 ][0] =  H11[2*i][0];
-        absH11_6[i*12 + 2 ][0] =  H11[2*i][0];
-        absH11_6[i*12 + 3][0]=  H11[2*i][0];
-        absH11_6[i*12 + 4 ][0] =  H11[2*i][0];
-        absH11_6[i*12 + 5 ][0] =  H11[2*i][0];
-        absH11_6[i*12 + 6 ][0] =  H11[2*i][0];
-        absH11_6[i*12 + 7 ][0] =  H11[2*i][0];
-        absH11_6[i*12 + 8][0]=  H11[2*i][0];
-        absH11_6[i*12 + 9 ][0] =  H11[2*i][0];
-        absH11_6[i*12 + 10 ][0] =  H11[2*i][0];
-        absH11_6[i*12 + 11 ][0] =  H11[2*i][0];
-
-        absH11_6[i*12][1] =  H11[2*i][1];
-        absH11_6[i*12 + 1 ][1] =  H11[2*i][1];
-        absH11_6[i*12 + 2 ][1] =  H11[2*i][1];
-        absH11_6[i*12 + 3][1]=  H11[2*i][1];
-        absH11_6[i*12 + 4 ][1] =  H11[2*i][1];
-        absH11_6[i*12 + 5 ][1] =  H11[2*i][1];
-        absH11_6[i*12 + 6 ][1] =  H11[2*i][1];
-        absH11_6[i*12 + 7 ][1] =  H11[2*i][1];
-        absH11_6[i*12 + 8][1]=  H11[2*i][1];
-        absH11_6[i*12 + 9 ][1] =  H11[2*i][1];
-        absH11_6[i*12 + 10 ][1] =  H11[2*i][1];
-        absH11_6[i*12 + 11 ][1] =  H11[2*i][1];
-        */
-    }
+   sys_function();//data >>   function >> HWS
 
 
-    // qDebug() << "  H : ---- ";
-    int cntg = 0;
-    double guess[1000][2] = {0};
 
-    for( int i = 0 ; i < 600 ; i++){
-        if(i%6 != 0){
-            // qDebug() << "  H :  "<<absH11_6[i][0];
-            guess[cntg][0] = (data1[i][0]*absH11_6[i][0]+data1[i][1]*absH11_6[i][1])/(absH11_6[i][0]*absH11_6[i][0]+absH11_6[i][1]*absH11_6[i][1]);
-            //guess[cntg][0] /= 15000;
 
-            guess[cntg][1] = (data1[i][1]*absH11_6[i][0]-data1[i][0]*absH11_6[i][1])/(absH11_6[i][0]*absH11_6[i][0]+absH11_6[i][1]*absH11_6[i][1]);
-            //guess[cntg][1]  /= 15000;
-            cntg++;
-        }//if
-    }//for
-
-    for( int i = 600 ; i < 1200 ; i++ ){
-        guess[i][0] = guess[i-600][0];
-        guess[i][1] = guess[i-600][1];
-    }
-   // pdata = &guess[0][0];
-    pdata = (&new_star[0][0]) ;
    //pdata += cnt_pt;
     cnt_pt+=2;
     if(cnt_pt == 100){
@@ -481,26 +348,68 @@ void QPSK3::sys_function(){
 
     double hw44_re[4][4];
     double hw44_im[4][4];
-/*
-    FILE *fp1,*fp2;
-    fp2 = fopen("data.txt","r");
-     fp1 = fopen("data2out.txt","w");
-    for( int i = 0 ; i < 4 ; i++){
-        for( int j = 0 ; j < 8 ; j++ ){
-            fscanf(fp2,"%lf",&mat48_1_re[i][j]);
-        }
-    }
-    for( int i = 0 ; i < 4 ; i++){
-        for( int j = 0 ; j < 8 ; j++ ){
-            fscanf(fp2,"%lf",&mat48_1_im[i][j]);
-        }
-    }
-    fclose(fp2);
-    */
 
+    double hw44_re_rx3[4][4];
+    double hw44_im_rx3[4][4];
 
+    //get mat
     for( int t = 0 ; t < 3 ; t++){//time
         for(int f = 0 ; f < 4 ; f ++){//freq
+            //rx3
+            // get data t1
+            for (int i = 0;i<4;i++){
+                for(int j=0;j<8;j++){
+                    mat48_1_re[i][j]=data1[i*256+j + 64*t + 8*f +32][0];
+                    mat48_1_im[i][j]=data1[i*256+j + 64*t + 8*f  +32][1];
+                }
+            }
+            // get data t2
+            for (int i = 0;i<4;i++){
+                for(int j=0;j<8;j++){
+                    mat48_2_re[i][j]=data1[i*256+j + 64*t+ 64 + 8*f+32 ][0];
+                    mat48_2_im[i][j]=data1[i*256+j + 64*t  + 64 + 8*f +32 ][1];
+                }
+            }
+            //H
+            hermitian( 4,8,mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im );
+            //mat48 x  mat84
+            Matrix_mult484(mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im, mat44_tmp_re,mat44_tmp_im);
+            //mat44^-1
+            chol_inv(mat44_tmp_re,mat44_tmp_im,mat44_inv_re,mat44_inv_im);
+            //mat84 x mat44^-1
+            Matrix_mult844(mat84_tmp_re,mat84_tmp_im, mat44_inv_re,mat44_inv_im, w84_re,w84_im);
+
+            double norm3 = 0;
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 4 ; j++ ){
+                    norm3 += w84_re[i][j]*w84_re[i][j]+w84_im[i][j]*w84_im[i][j];
+                }
+            }
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 4 ; j++ ){
+                    w84_re[i][j]  /= norm3;
+                    w84_im[i][j]  /= norm3;
+                }
+            }
+
+
+            Matrix_mult484(mat48_2_re,mat48_2_im,w84_re,w84_im,hw44_re_rx3,hw44_im_rx3);
+            qDebug() << "Rx3 W:";
+            for( int i = 0 ; i < 8  ; i++ ){
+                qDebug() << w84_re[i][0] << w84_re[i][1]   << w84_re[i][2] << w84_re[i][3] ;
+            }
+
+            qDebug()  << "\n";
+            for( int i = 0 ; i < 8 ; i++ ){
+                 qDebug() << w84_im[i][0] << w84_im[i][1]   << w84_im[i][2] << w84_im[i][3] ;
+            }
+            qDebug()  << " -----------------\n";
+
+
+
+
+
+            //rx1
             // get data t1
             for (int i = 0;i<4;i++){
                 for(int j=0;j<8;j++){
@@ -519,9 +428,50 @@ void QPSK3::sys_function(){
             Matrix_mult484(mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im, mat44_tmp_re,mat44_tmp_im);
             chol_inv(mat44_tmp_re,mat44_tmp_im,mat44_inv_re,mat44_inv_im);
             Matrix_mult844(mat84_tmp_re,mat84_tmp_im, mat44_inv_re,mat44_inv_im, w84_re,w84_im);
+
+
+            double norm1 = 0;
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 4 ; j++ ){
+                    norm1 += w84_re[i][j]*w84_re[i][j]+w84_im[i][j]*w84_im[i][j];
+                }
+            }
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 4 ; j++ ){
+                    w84_re[i][j]  /= norm1;
+                    w84_im[i][j]  /= norm1;
+                }
+            }
+
+
+
             Matrix_mult484(mat48_2_re,mat48_2_im,w84_re,w84_im,hw44_re,hw44_im);
 
          //   Matrix_mult482(mat48_2_re,mat48_2_im,w84_re,w84_im,hw42_re,hw42_im);
+
+
+
+            for( int i = 0 ; i < 2 ; i++ ){
+                for( int j = 0 ; j < 2 ; j++){
+                    //hw44_re[i][j] += hw44_re_rx3[i+2][j];
+                    //hw44_im[i][j] += hw44_im_rx3[i+2][j];
+                }
+            }
+            qDebug() << "hw44 : re";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_re[i][0] << hw44_re[i][1];
+            }
+                        qDebug() << "hw44 : im";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_im[i][0] << hw44_im[i][1];
+            }
+
+            for( int i = 0 ; i < 4 ; i++ ){
+                for( int j = 0 ; j < 4 ; j++ ){
+                    hw44_re[i][j]  *= norm1;
+                    hw44_im[i][j]  *= norm1;
+                }
+            }
 
             for( int i = 0 ; i < 4 ; i++ ){
                 for( int j = 0 ; j < 2 ; j++){
@@ -529,14 +479,38 @@ void QPSK3::sys_function(){
                     hw42_im[i][j] = hw44_im[i][j];
                 }
             }
+            qDebug() << "Rx1 W:";
+            for( int i = 0 ; i < 8  ; i++ ){
+                qDebug() << w84_re[i][0] << w84_re[i][1]   << w84_re[i][2] << w84_re[i][3] ;
+            }
+
+            qDebug()  << "\n";
+            for( int i = 0 ; i < 8 ; i++ ){
+                 qDebug() << w84_im[i][0] << w84_im[i][1]   << w84_im[i][2] << w84_im[i][3] ;
+            }
+            qDebug()  << " -----------------\n";
+
+
+
 
             for( int i = 0 ; i < 4 ; i++ ){
-                qDebug() << hw42_re[i][0] << hw42_re[i][1];
+                qDebug() << hw44_re_rx3[i][0] << hw44_re_rx3[i][1];
             }
 
             qDebug()  << "\n";
             for( int i = 0 ; i < 4 ; i++ ){
-                qDebug() << hw42_im[i][0] << hw42_im[i][1];
+                qDebug() << hw44_im_rx3[i][0] << hw44_im_rx3[i][1];
+            }
+            qDebug()  << " -----------------\n";
+
+        //hw1
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_re[i][0] << hw44_re[i][1];
+            }
+
+            qDebug()  << "\n";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_im[i][0] << hw44_im[i][1];
             }
             qDebug()  << " -----------------\n";
 
@@ -572,125 +546,13 @@ void QPSK3::sys_function(){
             new_star[cnt_newstar][0] = y41_re[0][0];
             new_star[cnt_newstar++][1] = y41_im[0][0];
 
+           // qDebug()<< "in my DrawStars, x ,y is " <<  y41_re[0][0] <<" , "<< y41_im[0][0]<<endl;
+
             if(cnt_newstar == 120){
                 cnt_newstar = 0;
             }
         }
     }
-
-   #ifdef onetime
-    for (int i = 0;i<4;i++){
-        for(int j=0;j<8;j++){
-            mat48_1_re[i][j]=data1[i*256+j][0];
-            mat48_1_im[i][j]=data1[i*256+j][1];
-        }
-    }
-
-    for (int i = 0;i<4;i++){
-        for(int j=0;j<8;j++){
-            mat48_2_re[i][j]=data1[i*256+j+64][0];
-            mat48_2_im[i][j]=data1[i*256+j+64][1];
-        }
-    }
-    hermitian( 4,8,mat48_1_re,mat48_1_im,
-                    mat84_tmp_re,mat84_tmp_im );
-
-    Matrix_mult484(mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im, mat44_tmp_re,mat44_tmp_im);
-    chol_inv(mat44_tmp_re,mat44_tmp_im,mat44_inv_re,mat44_inv_im);
-    Matrix_mult844(mat84_tmp_re,mat84_tmp_im, mat44_inv_re,mat44_inv_im, w84_re,w84_im);
-    Matrix_mult484(mat48_2_re,mat48_2_im,w84_re,w84_im,hw44_re,hw44_im);
-    double x_re[4][1];
-    double x_im[4][1];
-    double y41_re[4][1];
-    double y41_im[4][1];
-
-    for( int i = 0 ; i < 4 ; i++ ){
-        x_re[i][0] = pilot[i][0];
-        x_im[i][0] = pilot[i][1];
-    }
-
-
-
-    double alpha=0;
-
-    for (int i=0;i<4;i++){
-        alpha += 0.25 * atan(hw44_im[i][i]/hw44_re[i][i]);
-
-    }
-    double hw2_44_re[4][4];
-    double hw2_44_im[4][4];
-    for(int i = 0 ; i < 4 ; i++ ){
-        for( int j = 0 ; j < 4 ; j++ ){
-            mult(cos(alpha),-sin(alpha),hw44_re[i][j],hw44_im[i][j],&hw2_44_re[i][j],&hw2_44_im[i][j]);
-        }
-    }
-    Matrix_mult441(hw2_44_re,hw2_44_im,x_re,x_im,y41_re,y41_im);
-
-/*
-    for( int i = 0 ; i < 4; i++){
-        for( int j = 0 ; j < 4 ; j++ ){
-            fprintf(fp1,"%lf\t",hw44_re[i][j]);
-        }fprintf(fp1,"\n");
-    }
-    for( int i = 0 ; i < 4; i++){
-        for( int j = 0 ; j < 4 ; j++ ){
-            fprintf(fp1,"%lf\t",hw44_im[i][j]);
-        }fprintf(fp1,"\n");
-    }
-    */
-    for( int i = 0 ; i < 4; i++){
-        qDebug() << hw44_re[i][0] << hw44_re[i][1] << hw44_re[i][2] << hw44_re[i][3];// << mat48_1_re[i][4] << mat48_1_re[i][5] << mat48_1_re[i][6] << mat48_1_re[i][7];
-    }qDebug()<<"\n";
-    for( int i = 0 ; i < 4; i++){
-        qDebug() << hw44_im[i][0] << hw44_im[i][1] << hw44_im[i][2] << hw44_im[i][3] ;//<< hw44_im[i][4] << mat48_2_re[i][5] << mat48_2_re[i][6] << mat48_2_re[i][7];
-        }qDebug()<<"\n";
-
-    qDebug() << "y  re is "<< y41_re[0][0] <<  y41_re[1][0] <<  y41_re[2][0] <<  y41_re[3][0] ;
-    qDebug() << "y im is "<< y41_im[0][0] <<  y41_im[1][0] <<  y41_im[2][0] <<  y41_im[3][0] ;
-    qDebug() << "x  re is "<< pilot[0][0] <<  pilot[1][0] <<  pilot[2][0] <<  pilot[3][0] ;
-    qDebug() << "x im is "<< pilot[0][1] <<  pilot[1][1] <<  pilot[2][1] <<  pilot[3][1] ;
-/*
-    new_star[cnt_newstar][0] = y41_re[1][0];
-    new_star[cnt_newstar++][1] = y41_im[1][0];
-*/
-
-    new_star[cnt_newstar][0] = y41_re[0][0];
-    new_star[cnt_newstar++][1] = y41_im[0][0];
-    /*
-    new_star[cnt_newstar][0] = y41_re[2][0];
-    new_star[cnt_newstar++][1] = y41_im[2][0];
-    new_star[cnt_newstar][0] = y41_re[3][0];
-    new_star[cnt_newstar++][1] = y41_im[3][0];
-    */
-    if(cnt_newstar == 60){
-        cnt_newstar = 0;
-    }
-#endif
-/*
-    for( int i = 0 ; i < 4; i++){
-        qDebug() << mat48_1_re[i][0] << mat48_1_re[i][1] << mat48_1_re[i][2] << mat48_1_re[i][3] << mat48_1_re[i][4] << mat48_1_re[i][5] << mat48_1_re[i][6] << mat48_1_re[i][7];
-    }qDebug()<<"\n";
-    for( int i = 0 ; i < 4; i++){
-        qDebug() << mat48_2_re[i][0] << mat48_2_re[i][1] << mat48_2_re[i][2] << mat48_2_re[i][3] << mat48_2_re[i][4] << mat48_2_re[i][5] << mat48_2_re[i][6] << mat48_2_re[i][7];
-        }qDebug()<<"\n";
-*/
-
-
-   //Matrix_mult484(mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im, mat44_tmp_re,mat44_tmp_im);
-/*
-    for( int i = 0 ; i < 4 ; i++){
-         for( int j = 0 ; j < 4 ; j++){
-             mat44_tmp_re[i][1] = 1;
-         }
-    }
-    */
-
-
-
-
-
-
-
 }
 
 
@@ -863,12 +725,16 @@ double QPSK3::char2int(char *str){
 
 void QPSK3::myDrawStars(){
 
-    for( int i = 0  ; i < 1000 ; i++ ){
-        double z = (*(pdata+i*2+0));
+    for( int i = 0  ; i < 120 ; i++ ){
+/*
+        double z = (*(pdata+i*2+0))/3*1e8;
+        double y = *(pdata+i*2+1)/3*1e8;
+*/
+
+        double z = (*(pdata+i*2+0)) ;
         double y = *(pdata+i*2+1);
 
-
-        //qDebug()<< "in my DrawStars, x ,y is " << z<<" , "<<y<<endl;
+        qDebug()<< "in my DrawStars, x ,y is " << z<<" , "<<y<<endl;
         myDrawPoint(-0.2,y+0.5,z*2,0.02);
         //qDebug() <<"z :" << z <<"y :" << y ;
     }
