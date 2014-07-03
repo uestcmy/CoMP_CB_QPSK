@@ -1,16 +1,10 @@
-
-
 #include <QApplication>
 
 #include <qpsk3.h>
 
 #include <GL/glut.h>
 
-
-
-
 #include <qfile.h>
-
 #include <QDebug>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -32,7 +26,7 @@ int main(int argc, char *argv[])
     QPSK3 w3;
     w3.setGeometry(1200,5,251,220);
     w3.show();
-    w3.setWindowTitle("CB Stream 1 UE1 ( Port:7017)");
+    w3.setWindowTitle("UE1 S1 CB ( Port:8000)");
 
 
 

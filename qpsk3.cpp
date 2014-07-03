@@ -1,9 +1,6 @@
 #include "qpsk3.h"
 #include "ui_qpsk3.h"
 
-
-
-
 #include <math.h>
 #include <QDebug>
 #include <stdio.h>
@@ -14,8 +11,6 @@
 #include <QFileInfo>
 #include <QTextCodec>
 #include <QDateTime>
-
-
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -67,7 +62,7 @@ QPSK3::QPSK3(QWidget *parent) :
        sockser_chl1=socket(AF_INET,SOCK_DGRAM,0);
        addrSrv_chl1.sin_addr.s_addr=htonl(INADDR_ANY);
        addrSrv_chl1.sin_family=AF_INET;
-       addrSrv_chl1.sin_port=htons(7017);//server : receive port number
+       addrSrv_chl1.sin_port=htons(8000);//server : receive port number
        bind(sockser_chl1,(sockaddr*)&addrSrv_chl1,sizeof(sockaddr));
 
        id1 = startTimer(100);
@@ -262,7 +257,7 @@ void QPSK3::timerEvent(QTimerEvent *event){
        buff[position] = buff[position+3];
        buff[position+3] = tmp;
     }//for
-    //qDebug() << buff << endl;
+    qDebug() <<  buff << endl;
 
     int position = 12; // avoid the header a0aa 3c20 cccc
     for( int i = 0 ; i < 1200 ; i++){
@@ -275,7 +270,7 @@ void QPSK3::timerEvent(QTimerEvent *event){
     for( int i = 0 ; i < 1200 ; i++){
         data1[i][0]=hex2int(map1200[i][0],map1200[i][1],map1200[i][2],map1200[i][3]);
         data1[i][1]=hex2int(map1200[i][4],map1200[i][5],map1200[i][6],map1200[i][7]);
-       // qDebug() << data1[i][0] << data1[i][1] ;//<<data2[i][0] <<data2[i][1] <<endl;
+        qDebug() << data1[i][0] << data1[i][1] ;//<<data2[i][0] <<data2[i][1] <<endl;
     }//for i
 
 
@@ -356,9 +351,9 @@ void QPSK3::sys_function(){
     for( int t = 0 ; t < 3 ; t++){//time
         for(int f = 0 ; f < 4 ; f ++){//freq
             //rx3
-            // get data t1
-            for (int i = 0;i<4;i++){
-                for(int j=0;j<8;j++){
+            // get data t1 : mat48_1 of UE2
+            for (int i = 0;i<4;i++){//Rx1-4
+                for(int j=0;j<8;j++){//Tx1-8
                     mat48_1_re[i][j]=data1[i*256+j + 64*t + 8*f +32][0];
                     mat48_1_im[i][j]=data1[i*256+j + 64*t + 8*f  +32][1];
                 }
@@ -370,7 +365,7 @@ void QPSK3::sys_function(){
                     mat48_2_im[i][j]=data1[i*256+j + 64*t  + 64 + 8*f +32 ][1];
                 }
             }
-            //H
+            //H'
             hermitian( 4,8,mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im );
             //mat48 x  mat84
             Matrix_mult484(mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im, mat44_tmp_re,mat44_tmp_im);
@@ -381,12 +376,12 @@ void QPSK3::sys_function(){
 
             double norm3 = 0;
             for( int i = 0 ; i < 8 ; i++ ){
-                for( int j = 0 ; j < 4 ; j++ ){
+                for( int j = 2 ; j < 4 ; j++ ){//last 2 columns of w84
                     norm3 += w84_re[i][j]*w84_re[i][j]+w84_im[i][j]*w84_im[i][j];
                 }
             }
             for( int i = 0 ; i < 8 ; i++ ){
-                for( int j = 0 ; j < 4 ; j++ ){
+                for( int j = 2 ; j < 4 ; j++ ){
                     w84_re[i][j]  /= norm3;
                     w84_im[i][j]  /= norm3;
                 }
@@ -396,28 +391,25 @@ void QPSK3::sys_function(){
             Matrix_mult484(mat48_2_re,mat48_2_im,w84_re,w84_im,hw44_re_rx3,hw44_im_rx3);
             qDebug() << "Rx3 W:";
             for( int i = 0 ; i < 8  ; i++ ){
-                qDebug() << w84_re[i][0] << w84_re[i][1]   << w84_re[i][2] << w84_re[i][3] ;
+                qDebug()   << w84_re[i][2] << w84_re[i][3] ;
             }
 
             qDebug()  << "\n";
             for( int i = 0 ; i < 8 ; i++ ){
-                 qDebug() << w84_im[i][0] << w84_im[i][1]   << w84_im[i][2] << w84_im[i][3] ;
+                 qDebug() << w84_im[i][2] << w84_im[i][3] ;
             }
             qDebug()  << " -----------------\n";
 
 
-
-
-
             //rx1
-            // get data t1
+            // get data t1 of UE1
             for (int i = 0;i<4;i++){
                 for(int j=0;j<8;j++){
                     mat48_1_re[i][j]=data1[i*256+j + 64*t + 8*f ][0];
                     mat48_1_im[i][j]=data1[i*256+j + 64*t + 8*f  ][1];
                 }
             }
-            // get data t2
+            // get data t2 of UE1
             for (int i = 0;i<4;i++){
                 for(int j=0;j<8;j++){
                     mat48_2_re[i][j]=data1[i*256+j + 64*t+ 64 + 8*f ][0];
@@ -432,12 +424,12 @@ void QPSK3::sys_function(){
 
             double norm1 = 0;
             for( int i = 0 ; i < 8 ; i++ ){
-                for( int j = 0 ; j < 4 ; j++ ){
+                for( int j = 0 ; j < 2 ; j++ ){ // forst 2 columns
                     norm1 += w84_re[i][j]*w84_re[i][j]+w84_im[i][j]*w84_im[i][j];
                 }
             }
             for( int i = 0 ; i < 8 ; i++ ){
-                for( int j = 0 ; j < 4 ; j++ ){
+                for( int j = 0 ; j < 2 ; j++ ){
                     w84_re[i][j]  /= norm1;
                     w84_im[i][j]  /= norm1;
                 }
@@ -449,59 +441,29 @@ void QPSK3::sys_function(){
 
          //   Matrix_mult482(mat48_2_re,mat48_2_im,w84_re,w84_im,hw42_re,hw42_im);
 
-
-
+            // add interference from BS2 to UE1
             for( int i = 0 ; i < 2 ; i++ ){
                 for( int j = 0 ; j < 2 ; j++){
-                    //hw44_re[i][j] += hw44_re_rx3[i+2][j];
-                    //hw44_im[i][j] += hw44_im_rx3[i+2][j];
-                }
-            }
-            qDebug() << "hw44 : re";
-            for( int i = 0 ; i < 4 ; i++ ){
-                qDebug() << hw44_re[i][0] << hw44_re[i][1];
-            }
-                        qDebug() << "hw44 : im";
-            for( int i = 0 ; i < 4 ; i++ ){
-                qDebug() << hw44_im[i][0] << hw44_im[i][1];
-            }
-
-            for( int i = 0 ; i < 4 ; i++ ){
-                for( int j = 0 ; j < 4 ; j++ ){
-                    hw44_re[i][j]  *= norm1;
-                    hw44_im[i][j]  *= norm1;
+                    hw44_re[i][j] += hw44_re_rx3[i][j+2];
+                    hw44_im[i][j] += hw44_im_rx3[i][j+2];
                 }
             }
 
-            for( int i = 0 ; i < 4 ; i++ ){
-                for( int j = 0 ; j < 2 ; j++){
-                    hw42_re[i][j] = hw44_re[i][j];
-                    hw42_im[i][j] = hw44_im[i][j];
-                }
-            }
-            qDebug() << "Rx1 W:";
-            for( int i = 0 ; i < 8  ; i++ ){
-                qDebug() << w84_re[i][0] << w84_re[i][1]   << w84_re[i][2] << w84_re[i][3] ;
-            }
 
-            qDebug()  << "\n";
-            for( int i = 0 ; i < 8 ; i++ ){
-                 qDebug() << w84_im[i][0] << w84_im[i][1]   << w84_im[i][2] << w84_im[i][3] ;
-            }
-            qDebug()  << " -----------------\n";
+            qDebug()  << " hwrx3-----------------\n";
 
 
 
 
             for( int i = 0 ; i < 4 ; i++ ){
-                qDebug() << hw44_re_rx3[i][0] << hw44_re_rx3[i][1];
+                qDebug() << hw44_re_rx3[i][2] << hw44_re_rx3[i][3];
             }
 
             qDebug()  << "\n";
             for( int i = 0 ; i < 4 ; i++ ){
-                qDebug() << hw44_im_rx3[i][0] << hw44_im_rx3[i][1];
+                qDebug() << hw44_im_rx3[i][2] << hw44_im_rx3[i][3];
             }
-            qDebug()  << " -----------------\n";
+            qDebug()  << "hw -----------------\n";
 
         //hw1
             for( int i = 0 ; i < 4 ; i++ ){
@@ -514,7 +476,25 @@ void QPSK3::sys_function(){
             }
             qDebug()  << " -----------------\n";
 
-            // jiu xiangpian
+            for( int i = 0 ; i < 4 ; i++ ){
+                for( int j = 0 ; j < 4 ; j++ ){
+                    hw44_re[i][j]  *= norm1;
+                    hw44_im[i][j]  *= norm1;
+                }
+            }
+
+            qDebug() << "Rx1 W:";
+            for( int i = 0 ; i < 8  ; i++ ){
+                qDebug() << w84_re[i][0] << w84_re[i][1] ;
+            }
+
+            qDebug()  << "\n";
+            for( int i = 0 ; i < 8 ; i++ ){
+                 qDebug() << w84_im[i][0] << w84_im[i][1] ;
+            }
+
+            // detect 
+	/*
             double alpha=0;
 
             for (int i=0;i<4;i++){
@@ -528,12 +508,26 @@ void QPSK3::sys_function(){
                     mult(cos(alpha),-sin(alpha),hw44_re[i][j],hw44_im[i][j],&hw2_44_re[i][j],&hw2_44_im[i][j]);
                 }
             }
+*/
+	    double hw2_44_re[4][4]={0};
+            double hw2_44_im[4][4]={0};
+	    for(int i=0;i<4;i++){
+		for(int j=0;j<2;j++){
+			hw2_44_re[i][j] = hw44_re[i][j];
+			hw2_44_im[i][j] = hw44_im[i][j];
+		}
+	    }
+		hw2_44_re[0][0]=(hw44_re[0][0]*hw44_re[1][1]+hw44_im[0][0]*hw44_im[1][1])/(hw44_re[1][1]*hw44_re[1][1]+hw44_im[1][1]*hw44_im[1][1]);
+		hw2_44_im[0][0]=(hw44_re[0][0]*hw44_im[1][1]-hw44_im[0][0]*hw44_re[1][1])/(hw44_re[1][1]*hw44_re[1][1]+hw44_im[1][1]*hw44_im[1][1]);
+
+		hw2_44_re[0][1]=(hw44_re[0][1]*hw44_re[1][1]+hw44_im[0][1]*hw44_im[1][1])/(hw44_re[1][1]*hw44_re[1][1]+hw44_im[1][1]*hw44_im[1][1]);
+		hw2_44_im[0][1]=(hw44_re[0][1]*hw44_im[1][1]-hw44_im[0][1]*hw44_re[1][1])/(hw44_re[1][1]*hw44_re[1][1]+hw44_im[1][1]*hw44_im[1][1]);
             //get x
-            double x_re[4][1];
-            double x_im[4][1];
+            double x_re[4][1]={0};
+            double x_im[4][1]={0};
             double y41_re[4][1];
             double y41_im[4][1];
-            for( int ip = 0 ; ip < 4 ; ip++ ){
+            for( int ip = 0 ; ip < 2 ; ip++ ){
                 x_re[ip][0] = pilot[cnt_pilot][0];
                 x_im[ip][0] = pilot[cnt_pilot++][1];
                 if(cnt_pilot == 1200){
@@ -734,7 +728,7 @@ void QPSK3::myDrawStars(){
         double z = (*(pdata+i*2+0)) ;
         double y = *(pdata+i*2+1);
 
-        qDebug()<< "in my DrawStars, x ,y is " << z<<" , "<<y<<endl;
+        //qDebug()<< "in my DrawStars, x ,y is " << z<<" , "<<y<<endl;
         myDrawPoint(-0.2,y+0.5,z*2,0.02);
         //qDebug() <<"z :" << z <<"y :" << y ;
     }
