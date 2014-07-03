@@ -32,7 +32,7 @@ double soc(double x_re,double x_im)
     return(z);
 }
 
-void Matrix_mult421(double a1_re[][2],double a1_im[][2],double b1_re[][1],double b1_im[][1],double c1_re[][1],double c1_im[][1])
+void Matrix_mult441(double a1_re[][4],double a1_im[][4],double b1_re[][1],double b1_im[][1],double c1_re[][1],double c1_im[][1])
 {
     int i,j,k;
     double sum_re,sum_im;
@@ -47,7 +47,7 @@ void Matrix_mult421(double a1_re[][2],double a1_im[][2],double b1_re[][1],double
         {
             sum_re=0;
             sum_im=0;
-            for(k=0;k<2;k++)
+            for(k=0;k<4;k++)
             {
                 mult(a1_re[i][k],a1_im[i][k],b1_re[k][j],b1_im[k][j],p_re,p_im);
                 sum_re=sum_re+temp_re;
@@ -104,42 +104,7 @@ void Matrix_mult484(double a1_re[][8],double a1_im[][8],double b1_re[][4],double
     fclose(fp1);
     */
 }
-void Matrix_mult282(double a1_re[][8],double a1_im[][8],double b1_re[][2],double b1_im[][2],double c1_re[][2],double c1_im[][2])
-{
-    int i,j,k;
-    double sum_re,sum_im;
-    double temp_re,temp_im;
-    double *p_re;
-    double *p_im;
-    p_re=&temp_re;
-    p_im=&temp_im;
-    for(i=0;i<2;i++)
-    {
-        for(j=0;j<2;j++)
-        {
-            sum_re=0;
-            sum_im=0;
-            for(k=0;k<8;k++)
-            {
-                mult(a1_re[i][k],a1_im[i][k],b1_re[k][j],b1_im[k][j],p_re,p_im);
-                sum_re=sum_re+temp_re;
-                sum_im=sum_im+temp_im;
-            }
-            c1_re[i][j]=sum_re;
-            c1_im[i][j]=sum_im;
-        }
-    }
-/*
-    FILE *fp1,*fp2;
-    fp1 = fopen("data.txt","w");
-    for( int i = 0 ; i < 4 ; i++){
-        for( int j = 0 ; j < 4 ; j++ ){
-            fprintf(fp1,"%lf\t",c1_re[i][j]);
-        }fprintf(fp1,"\n");
-    }
-    fclose(fp1);
-    */
-}
+
 void Matrix_mult844(double a1_re[][4],double a1_im[][4],double b1_re[][4],double b1_im[][4],double c1_re[][4],double c1_im[][4])
 {
     int i,j,k;
@@ -156,80 +121,6 @@ void Matrix_mult844(double a1_re[][4],double a1_im[][4],double b1_re[][4],double
             sum_re=0;
             sum_im=0;
             for(k=0;k<4;k++)
-            {
-                mult(a1_re[i][k],a1_im[i][k],b1_re[k][j],b1_im[k][j],p_re,p_im);
-                sum_re=sum_re+temp_re;
-                sum_im=sum_im+temp_im;
-            }
-            c1_re[i][j]=sum_re;
-            c1_im[i][j]=sum_im;
-        }
-    }
-/*
-    FILE *fp1,*fp2;
-    fp1 = fopen("data.txt","w");
-    for( int i = 0 ; i < 4 ; i++){
-        for( int j = 0 ; j < 4 ; j++ ){
-            fprintf(fp1,"%lf\t",c1_re[i][j]);
-        }fprintf(fp1,"\n");
-    }
-    fclose(fp1);
-    */
-}
-
-void Matrix_mult482(double a1_re[][8],double a1_im[][8],double b1_re[][2],double b1_im[][2],double c1_re[][2],double c1_im[][2])
-{
-    int i,j,k;
-    double sum_re,sum_im;
-    double temp_re,temp_im;
-    double *p_re;
-    double *p_im;
-    p_re=&temp_re;
-    p_im=&temp_im;
-    for(i=0;i<4;i++)
-    {
-        for(j=0;j<2;j++)
-        {
-            sum_re=0;
-            sum_im=0;
-            for(k=0;k<8;k++)
-            {
-                mult(a1_re[i][k],a1_im[i][k],b1_re[k][j],b1_im[k][j],p_re,p_im);
-                sum_re=sum_re+temp_re;
-                sum_im=sum_im+temp_im;
-            }
-            c1_re[i][j]=sum_re;
-            c1_im[i][j]=sum_im;
-        }
-    }
-/*
-    FILE *fp1,*fp2;
-    fp1 = fopen("data.txt","w");
-    for( int i = 0 ; i < 4 ; i++){
-        for( int j = 0 ; j < 4 ; j++ ){
-            fprintf(fp1,"%lf\t",c1_re[i][j]);
-        }fprintf(fp1,"\n");
-    }
-    fclose(fp1);
-    */
-}
-
-void Matrix_mult822(double a1_re[][2],double a1_im[][2],double b1_re[][2],double b1_im[][2],double c1_re[][2],double c1_im[][2])
-{
-    int i,j,k;
-    double sum_re,sum_im;
-    double temp_re,temp_im;
-    double *p_re;
-    double *p_im;
-    p_re=&temp_re;
-    p_im=&temp_im;
-    for(i=0;i<8;i++)
-    {
-        for(j=0;j<2;j++)
-        {
-            sum_re=0;
-            sum_im=0;
-            for(k=0;k<2;k++)
             {
                 mult(a1_re[i][k],a1_im[i][k],b1_re[k][j],b1_im[k][j],p_re,p_im);
                 sum_re=sum_re+temp_re;
@@ -276,36 +167,6 @@ void Matrix_mult444(double a1_re[][4],double a1_im[][4],double b1_re[][4],double
         }
     }
 }
-void chol_inv22(double a1_re[][2],double a1_im[][2],double b2_re[][2],double b2_im[][2])
-{
-    double b1_re[2][2];
-    double b1_im[2][2];
-
-    double det[2][2] = {0};
-    mult(a1_re[0][0],a1_im[0][0],a1_re[1][1],a1_im[1][1],&det[0][0],&det[0][1]);//complex mult;
-    mult(a1_re[0][1],a1_im[0][1],a1_re[1][0],a1_im[1][0],&det[1][0],&det[1][1]);//complex mult;
-    double cha[2];
-    cha[0] = det[0][0]-det[1][0];//re
-    cha[1] = det[0][1]-det[1][1];//im
-    double abscha =  cha[0] *cha[0]+ cha[1]*cha[1]  ;
-    double theta[2];
-    theta[0] = cha[0]/abscha;
-    theta[1] = -cha[1]/abscha;//complex dev
-   //re
-    b1_re[0][0] = a1_re[1][1];   b1_re[0][1] = -a1_re[0][1];
-    b1_re[1][0] = -a1_re[1][0];   b1_re[1][1] =a1_re[0][0];
-    //im
-    b1_im[0][0] = a1_im[1][1];   b1_im[0][1] = -a1_im[0][1];
-    b1_im[1][0] = -a1_im[1][0];   b1_im[1][1] =a1_im[0][0];
-
-
-    for( int i = 0 ; i < 2 ; i++){
-        for( int j = 0 ; j < 2 ; j++ ){
-            mult(b1_re[i][j],b1_im[i][j],theta[0],theta[1],&b2_re[i][j],&b2_im[i][j]);
-        }
-    }
-}
-
 
 void chol_inv(double a1_re[][4],double a1_im[][4],double b1_re[][4],double b1_im[][4])
 {
@@ -417,7 +278,7 @@ void chol_inv(double a1_re[][4],double a1_im[][4],double b1_re[][4],double b1_im
 }
 
 void hermitian( int m,int n, double mat48_1_re[][8],double mat48_1_im[][8],
-           double mat84_tmp_re[][2],double mat84_tmp_im[][2] ){
+           double mat84_tmp_re[][4],double mat84_tmp_im[][4] ){
     // transform and conj
     //m == 4 n == 8
     for( int i = 0 ; i < m ; i++){
