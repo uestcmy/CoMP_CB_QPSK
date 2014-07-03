@@ -67,7 +67,7 @@ QPSK3::QPSK3(QWidget *parent) :
        sockser_chl1=socket(AF_INET,SOCK_DGRAM,0);
        addrSrv_chl1.sin_addr.s_addr=htonl(INADDR_ANY);
        addrSrv_chl1.sin_family=AF_INET;
-       addrSrv_chl1.sin_port=htons(7019);//server : receive port number
+       addrSrv_chl1.sin_port=htons(8002);//server : receive port number
        bind(sockser_chl1,(sockaddr*)&addrSrv_chl1,sizeof(sockaddr));
 
        id1 = startTimer(100);
@@ -481,6 +481,8 @@ void QPSK3::sys_function(){
 
     double hw44_re[4][4];
     double hw44_im[4][4];
+    double hw44_re_rx3[4][4];
+    double hw44_im_rx3[4][4];
 /*
     FILE *fp1,*fp2;
     fp2 = fopen("data.txt","r");
@@ -497,10 +499,431 @@ void QPSK3::sys_function(){
     }
     fclose(fp2);
     */
+for( int t = 0 ; t < 3 ; t++){//time
+        for(int f = 0 ; f < 4 ; f ++){//freq
+            //BS2->UE2
+            // get data t1
+            for (int i = 0;i<4;i++){
+                for(int j=0;j<8;j++){
+                    mat48_1_re[i][j]=data1[i*256+j + 64*t + 8*f +32][0];
+                    mat48_1_im[i][j]=data1[i*256+j + 64*t + 8*f  +32][1];
+                }
+            }
+            // get data t2
+            for (int i = 0;i<4;i++){
+                for(int j=0;j<8;j++){
+                    mat48_2_re[i][j]=data1[i*256+j + 64*t+ 64 + 8*f+32 ][0];
+                    mat48_2_im[i][j]=data1[i*256+j + 64*t  + 64 + 8*f +32 ][1];
+                }
+            }
+            //H'
+            hermitian( 4,8,mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im );
+            //mat48 x  mat84
+            Matrix_mult484(mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im, mat44_tmp_re,mat44_tmp_im);
+            //mat44^-1
+            chol_inv(mat44_tmp_re,mat44_tmp_im,mat44_inv_re,mat44_inv_im);
+            //mat84 x mat44^-1
+            Matrix_mult844(mat84_tmp_re,mat84_tmp_im, mat44_inv_re,mat44_inv_im, w84_re,w84_im);
+
+            double norm3 = 0;
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 2 ; j < 4 ; j++ ){
+                    norm3 += w84_re[i][j]*w84_re[i][j]+w84_im[i][j]*w84_im[i][j];
+                }
+            }
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 2 ; j < 4 ; j++ ){
+                    w84_re[i][j]  /= norm3;
+                    w84_im[i][j]  /= norm3;
+                }
+            }
 
 
+            Matrix_mult484(mat48_2_re,mat48_2_im,w84_re,w84_im,hw44_re_rx3,hw44_im_rx3);
+            qDebug() << "Rx3 W:";
+            for( int i = 0 ; i < 8  ; i++ ){
+                qDebug()   << w84_re[i][2] << w84_re[i][3] ;
+            }
+
+            qDebug()  << "\n";
+            for( int i = 0 ; i < 8 ; i++ ){
+                 qDebug() << w84_im[i][2] << w84_im[i][3] ;
+            }
+            qDebug()  << " -----------------\n";
+
+
+
+
+
+            //BS1-UE1
+            // get data t1
+            for (int i = 0;i<4;i++){
+                for(int j=0;j<8;j++){
+                    mat48_1_re[i][j]=data1[i*256+j + 64*t + 8*f ][0];
+                    mat48_1_im[i][j]=data1[i*256+j + 64*t + 8*f  ][1];
+                }
+            }
+            // get data t2
+            for (int i = 0;i<4;i++){
+                for(int j=0;j<8;j++){
+                    mat48_2_re[i][j]=data1[i*256+j + 64*t+ 64 + 8*f ][0];
+                    mat48_2_im[i][j]=data1[i*256+j + 64*t  + 64 + 8*f  ][1];
+                }
+            }
+            hermitian( 4,8,mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im );
+            Matrix_mult484(mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im, mat44_tmp_re,mat44_tmp_im);
+            chol_inv(mat44_tmp_re,mat44_tmp_im,mat44_inv_re,mat44_inv_im);
+            Matrix_mult844(mat84_tmp_re,mat84_tmp_im, mat44_inv_re,mat44_inv_im, w84_re,w84_im);
+
+
+            double norm1 = 0;
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 2 ; j++ ){
+                    norm1 += w84_re[i][j]*w84_re[i][j]+w84_im[i][j]*w84_im[i][j];
+                }
+            }
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 2 ; j++ ){
+                    w84_re[i][j]  /= norm1;
+                    w84_im[i][j]  /= norm1;
+                }
+            }
+            Matrix_mult484(mat48_2_re,mat48_2_im,w84_re,w84_im,hw44_re,hw44_im);
+         //   Matrix_mult482(mat48_2_re,mat48_2_im,w84_re,w84_im,hw42_re,hw42_im);
+            for( int i = 0 ; i < 2 ; i++ ){
+                for( int j = 0 ; j < 2 ; j++){
+                    hw44_re_rx3[i+2][j+2] += hw44_re[i+2][j];// add interference to rx3
+                    hw44_im_rx3[i+2][j+2] += hw44_im[i+2][j];
+                }
+            }
+/*
+            qDebug() << "hw44 : re";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_re[i][0] << hw44_re[i][1];
+            }
+                        qDebug() << "hw44 : im";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_im[i][0] << hw44_im[i][1];
+            }
+            qDebug() << "hw44rx3 : re";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_re_rx3[i][2] << hw44_re_rx3[i][3];
+            }
+                        qDebug() << "hw44rx3 : im";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_im_rx3[i][2] << hw44_im_rx3[i][3];
+            }
+
+
+            qDebug()  << " h44-----------------\n";
+
+
+
+
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_re_rx3[i][2] << hw44_re_rx3[i][3];
+            }
+
+            qDebug()  << "\n";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_im_rx3[i][2] << hw44_im_rx3[i][3];
+            }
+            qDebug()  << " -----------------\n";
+
+        //hw1
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_re[i][0] << hw44_re[i][1];
+            }
+
+            qDebug()  << "\n";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_im[i][0] << hw44_im[i][1];
+            }
+            qDebug()  << " -----------------\n";
+*/
+            for( int i = 0 ; i < 4 ; i++ ){
+                for( int j = 0 ; j < 4 ; j++ ){
+                    hw44_re_rx3[i][j]  *= norm3;
+                    hw44_im_rx3[i][j]  *= norm3;
+                }
+            }
+
+            qDebug() << "Rx1 W:";
+            for( int i = 0 ; i < 8  ; i++ ){
+                qDebug() << w84_re[i][0] << w84_re[i][1] ;
+            }
+
+            qDebug()  << "\n";
+            for( int i = 0 ; i < 8 ; i++ ){
+                 qDebug() << w84_im[i][0] << w84_im[i][1] ;
+            }
+
+            // detect 
+	/*
+            double alpha=0;
+
+            for (int i=0;i<4;i++){
+                alpha += 0.25 * atan(hw44_im[i][i]/hw44_re[i][i]);
+
+            }
+            double hw2_44_re[4][4];
+            double hw2_44_im[4][4];
+            for(int i = 0 ; i < 4 ; i++ ){
+                for( int j = 0 ; j < 4 ; j++ ){
+                    mult(cos(alpha),-sin(alpha),hw44_re[i][j],hw44_im[i][j],&hw2_44_re[i][j],&hw2_44_im[i][j]);
+                }
+            }
+*/
+	    double hw2_44_re[4][4]={0};
+        double hw2_44_im[4][4]={0};
+        for(int i=0;i<4;i++){      //
+            for(int j=2;j<4;j++){  //
+                hw2_44_re[i][j] = hw44_re_rx3[i][j];
+                hw2_44_im[i][j] = hw44_im_rx3[i][j];
+            }
+	    }
+		hw2_44_re[2][2]=(hw44_re_rx3[2][2]*hw44_re_rx3[3][3]+hw44_im_rx3[2][2]*hw44_im_rx3[3][3])/(hw44_re_rx3[3][3]*hw44_re_rx3[3][3]+hw44_im_rx3[3][3]*hw44_im_rx3[3][3]);
+		hw2_44_im[2][2]=(hw44_re_rx3[2][2]*hw44_im_rx3[3][3]-hw44_im_rx3[2][2]*hw44_re_rx3[3][3])/(hw44_re_rx3[3][3]*hw44_re_rx3[3][3]+hw44_im_rx3[3][3]*hw44_im_rx3[3][3]);
+
+		hw2_44_re[2][3]=(hw44_re_rx3[2][3]*hw44_re_rx3[3][3]+hw44_im_rx3[2][3]*hw44_im_rx3[3][3])/(hw44_re_rx3[3][3]*hw44_re_rx3[3][3]+hw44_im_rx3[3][3]*hw44_im_rx3[3][3]);
+		hw2_44_im[2][3]=(hw44_re_rx3[2][3]*hw44_im_rx3[3][3]-hw44_im_rx3[2][3]*hw44_re_rx3[3][3])/(hw44_re_rx3[3][3]*hw44_re_rx3[3][3]+hw44_im_rx3[3][3]*hw44_im_rx3[3][3]);
+            //get x
+            double x_re[4][1]={0};
+            double x_im[4][1]={0};
+            double y41_re[4][1];
+            double y41_im[4][1];
+            for( int ip = 2 ; ip < 4 ; ip++ ){
+                x_re[ip][0] = pilot[cnt_pilot][0];
+                x_im[ip][0] = pilot[cnt_pilot++][1];
+                if(cnt_pilot == 1200){
+                    cnt_pilot = 0;
+                }
+            }
+            //y = hw*x
+            Matrix_mult441(hw2_44_re,hw2_44_im,x_re,x_im,y41_re,y41_im);
+
+            new_star[cnt_newstar][0] = y41_re[2][0];
+            new_star[cnt_newstar++][1] = y41_im[2][0];
+
+            qDebug()<< "ih44 is " <<  hw2_44_re[2][2] <<" , "<< hw2_44_im[2][2]<<endl;
+
+            qDebug()<< "in my DrawStars, x ,y is " <<  y41_re[0][0] <<" , "<< y41_im[0][0]<<endl;
+
+            if(cnt_newstar == 120){
+                cnt_newstar = 0;
+            }
+        }
+    }
+}
+
+/*org
     for( int t = 0 ; t < 3 ; t++){//time
         for(int f = 0 ; f < 4 ; f ++){//freq
+            //rx3
+            // get data t1
+            for (int i = 0;i<4;i++){
+                for(int j=0;j<8;j++){
+                    mat48_1_re[i][j]=data1[i*256+j + 64*t + 8*f +32][0];
+                    mat48_1_im[i][j]=data1[i*256+j + 64*t + 8*f  +32][1];
+                }
+            }
+            // get data t2
+            for (int i = 0;i<4;i++){
+                for(int j=0;j<8;j++){
+                    mat48_2_re[i][j]=data1[i*256+j + 64*t+ 64 + 8*f+32 ][0];
+                    mat48_2_im[i][j]=data1[i*256+j + 64*t  + 64 + 8*f +32 ][1];
+                }
+            }
+            //H
+            hermitian( 4,8,mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im );
+            //mat48 x  mat84
+            Matrix_mult484(mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im, mat44_tmp_re,mat44_tmp_im);
+            //mat44^-1
+            chol_inv(mat44_tmp_re,mat44_tmp_im,mat44_inv_re,mat44_inv_im);
+            //mat84 x mat44^-1
+            Matrix_mult844(mat84_tmp_re,mat84_tmp_im, mat44_inv_re,mat44_inv_im, w84_re,w84_im);
+
+            double norm3 = 0;
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 4 ; j++ ){
+                    norm3 += w84_re[i][j]*w84_re[i][j]+w84_im[i][j]*w84_im[i][j];
+                }
+            }
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 4 ; j++ ){
+                    w84_re[i][j]  /= norm3;
+                    w84_im[i][j]  /= norm3;
+                }
+            }
+
+
+            Matrix_mult484(mat48_2_re,mat48_2_im,w84_re,w84_im,hw44_re_rx3,hw44_im_rx3);
+            qDebug() << "Rx3 W:";
+            for( int i = 0 ; i < 8  ; i++ ){
+                qDebug() << w84_re[i][0] << w84_re[i][1]   << w84_re[i][2] << w84_re[i][3] ;
+            }
+
+            qDebug()  << "\n";
+            for( int i = 0 ; i < 8 ; i++ ){
+                 qDebug() << w84_im[i][0] << w84_im[i][1]   << w84_im[i][2] << w84_im[i][3] ;
+            }
+            qDebug()  << " -----------------\n";
+
+
+
+
+
+            //rx1
+            // get data t1
+            for (int i = 0;i<4;i++){
+                for(int j=0;j<8;j++){
+                    mat48_1_re[i][j]=data1[i*256+j + 64*t + 8*f ][0];
+                    mat48_1_im[i][j]=data1[i*256+j + 64*t + 8*f  ][1];
+                }
+            }
+            // get data t2
+            for (int i = 0;i<4;i++){
+                for(int j=0;j<8;j++){
+                    mat48_2_re[i][j]=data1[i*256+j + 64*t+ 64 + 8*f ][0];
+                    mat48_2_im[i][j]=data1[i*256+j + 64*t  + 64 + 8*f  ][1];
+                }
+            }
+            hermitian( 4,8,mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im );
+            Matrix_mult484(mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im, mat44_tmp_re,mat44_tmp_im);
+            chol_inv(mat44_tmp_re,mat44_tmp_im,mat44_inv_re,mat44_inv_im);
+            Matrix_mult844(mat84_tmp_re,mat84_tmp_im, mat44_inv_re,mat44_inv_im, w84_re,w84_im);
+
+
+            double norm1 = 0;
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 4 ; j++ ){
+                    norm1 += w84_re[i][j]*w84_re[i][j]+w84_im[i][j]*w84_im[i][j];
+                }
+            }
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 4 ; j++ ){
+                    w84_re[i][j]  /= norm1;
+                    w84_im[i][j]  /= norm1;
+                }
+            }
+
+
+
+            Matrix_mult484(mat48_2_re,mat48_2_im,w84_re,w84_im,hw44_re,hw44_im);
+
+         //   Matrix_mult482(mat48_2_re,mat48_2_im,w84_re,w84_im,hw42_re,hw42_im);
+
+
+
+            for( int i = 0 ; i < 2 ; i++ ){
+                for( int j = 0 ; j < 2 ; j++){
+                    //hw44_re[i][j] += hw44_re_rx3[i+2][j];
+                    //hw44_im[i][j] += hw44_im_rx3[i+2][j];
+                }
+            }
+            qDebug() << "hw44 : re";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_re[i][0] << hw44_re[i][1];
+            }
+                        qDebug() << "hw44 : im";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_im[i][0] << hw44_im[i][1];
+            }
+
+            for( int i = 0 ; i < 4 ; i++ ){
+                for( int j = 0 ; j < 4 ; j++ ){
+                    hw44_re[i][j]  *= norm1;
+                    hw44_im[i][j]  *= norm1;
+                }
+            }
+
+            for( int i = 0 ; i < 4 ; i++ ){
+                for( int j = 0 ; j < 2 ; j++){
+                    hw42_re[i][j] = hw44_re[i][j];
+                    hw42_im[i][j] = hw44_im[i][j];
+                }
+            }
+            qDebug() << "Rx1 W:";
+            for( int i = 0 ; i < 8  ; i++ ){
+                qDebug() << w84_re[i][0] << w84_re[i][1]   << w84_re[i][2] << w84_re[i][3] ;
+            }
+
+            qDebug()  << "\n";
+            for( int i = 0 ; i < 8 ; i++ ){
+                 qDebug() << w84_im[i][0] << w84_im[i][1]   << w84_im[i][2] << w84_im[i][3] ;
+            }
+            qDebug()  << " -----------------\n";
+
+
+
+
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_re_rx3[i][0] << hw44_re_rx3[i][1];
+            }
+
+            qDebug()  << "\n";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_im_rx3[i][0] << hw44_im_rx3[i][1];
+            }
+            qDebug()  << " -----------------\n";
+
+        //hw1
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_re[i][0] << hw44_re[i][1];
+            }
+
+            qDebug()  << "\n";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw44_im[i][0] << hw44_im[i][1];
+            }
+            qDebug()  << " -----------------\n";
+
+            // jiu xiangpian
+            double alpha=0;
+
+            for (int i=0;i<4;i++){
+                alpha += 0.25 * atan(hw44_im[i][i]/hw44_re[i][i]);
+
+            }
+            double hw2_44_re[4][4];
+            double hw2_44_im[4][4];
+            for(int i = 0 ; i < 4 ; i++ ){
+                for( int j = 0 ; j < 4 ; j++ ){
+                    mult(cos(alpha),-sin(alpha),hw44_re[i][j],hw44_im[i][j],&hw2_44_re[i][j],&hw2_44_im[i][j]);
+                }
+            }
+            //get x
+            double x_re[4][1];
+            double x_im[4][1];
+            double y41_re[4][1];
+            double y41_im[4][1];
+            for( int ip = 0 ; ip < 4 ; ip++ ){
+                x_re[ip][0] = pilot[cnt_pilot][0];
+                x_im[ip][0] = pilot[cnt_pilot++][1];
+                if(cnt_pilot == 1200){
+                    cnt_pilot = 0;
+                }
+            }
+            //y = hw*x
+            Matrix_mult441(hw2_44_re,hw2_44_im,x_re,x_im,y41_re,y41_im);
+
+            new_star[cnt_newstar][0] = y41_re[0][0];
+            new_star[cnt_newstar++][1] = y41_im[0][0];
+
+           // qDebug()<< "in my DrawStars, x ,y is " <<  y41_re[0][0] <<" , "<< y41_im[0][0]<<endl;
+
+            if(cnt_newstar == 120){
+                cnt_newstar = 0;
+            }
+        }
+    }
+}
+*/
+
+/*org
+    for( int t = 0 ; t < 3 ; t++){//time
+        for(int f = 0 ; f < 4 ; f ++){//freq
+		//bs2 ue2 precoding
             // get data t1
             for (int i = 0;i<4;i++){
                 for(int j=0;j<8;j++){
@@ -568,6 +991,7 @@ void QPSK3::sys_function(){
             }
         }
     }
+*/
 
 
 
@@ -577,7 +1001,7 @@ void QPSK3::sys_function(){
 
 
 
-}
+
 
 
 int QPSK3::hex2int(char a,char b,char c,char d)
