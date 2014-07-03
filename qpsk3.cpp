@@ -62,12 +62,12 @@ QPSK3::QPSK3(QWidget *parent) :
 
 
 
-       InputManagement();
+    InputManagement();
        size_chl2=sizeof(sockaddr_in);
        sockser_chl1=socket(AF_INET,SOCK_DGRAM,0);
        addrSrv_chl1.sin_addr.s_addr=htonl(INADDR_ANY);
        addrSrv_chl1.sin_family=AF_INET;
-       addrSrv_chl1.sin_port=htons(8005);//server : receive port number
+       addrSrv_chl1.sin_port=htons(8006);//server : receive port number
        bind(sockser_chl1,(sockaddr*)&addrSrv_chl1,sizeof(sockaddr));
 
        id1 = startTimer(100);
@@ -98,8 +98,8 @@ void QPSK3::resizeGL(int w, int h)
     //luPerspective(40.0, (GLfloat)w/(GLfloat)h, 2, 30.0);
     //gluPerspective(40,1.33, 2, 30.0);
     //glOrtho (-1.5 * ( GLfloat ) w / ( GLfloat ) h, 2.3* ( GLfloat ) w / ( GLfloat ) h, -2, 2, -15.0, 15.0);
-    // glFrustum (-3* ( GLfloat ) w / ( GLfloat ) h, 3* ( GLfloat ) w / ( GLfloat ) h, -2, 2, 5, 10.0);
-      glOrtho (-2.5 * ( GLfloat ) w / ( GLfloat ) h, 2.3* ( GLfloat ) w / ( GLfloat ) h, -1.8, 1.8, -15.0, 15.0);
+   //  glFrustum (-3* ( GLfloat ) w / ( GLfloat ) h, 3* ( GLfloat ) w / ( GLfloat ) h, -2, 2, 5, 10.0);
+     glOrtho (-2.5 * ( GLfloat ) w / ( GLfloat ) h, 2.3* ( GLfloat ) w / ( GLfloat ) h, -1.8, 1.8, -15.0, 15.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -276,7 +276,7 @@ void QPSK3::timerEvent(QTimerEvent *event){
     for( int i = 0 ; i < 1200 ; i++){
         data1[i][0]=hex2int(map1200[i][0],map1200[i][1],map1200[i][2],map1200[i][3]);
         data1[i][1]=hex2int(map1200[i][4],map1200[i][5],map1200[i][6],map1200[i][7]);
-        //qDebug() << data1[i][0] << data1[i][1] ;//<<data2[i][0] <<data2[i][1] <<endl;
+       // qDebug() << data1[i][0] << data1[i][1] ;//<<data2[i][0] <<data2[i][1] <<endl;
     }//for i
 
     sys_function();//data >>   function >> HWS
@@ -477,34 +477,21 @@ void QPSK3::sys_function(){
     double hw42_re[4][2];
     double hw42_im[4][2];
 
+    double hw42_re_rx2[4][2];
+    double hw42_im_rx2[4][2];
+
     double hw42_re_rx4[4][2];
     double hw42_im_rx4[4][2];
-
-
     for( int t = 0 ; t < 3 ; t++){//time
         for(int f = 0 ; f < 4 ; f ++){//freq
-            //BS2->UE2 Rx3,4
-            for (int i = 2;i<4;i++){//Rx3,4 ,last 2 rows,exclude BS2 to UE1
-                for(int j=0;j<8;j++){//Tx1-8
+            //BS2->UE2
+            for (int i = 2;i<4;i++){
+                for(int j=0;j<8;j++){
                     mat28_1_re[i-2][j]=data1[i*256+j + 64*t + 8*f +32][0];
                     mat28_1_im[i-2][j]=data1[i*256+j + 64*t + 8*f  +32][1];
                 }
             }
-            /*
-            qDebug() << "mat28 :";
-            for( int i = 0 ; i < 2 ; i++ ){
-                for( int j = 0 ; j < 8 ; j++ ){
-                    qDebug() << mat28_1_re[i][j];
-                }
-                qDebug() << endl;
-            }
-
-            qDebug() << "data1 :";
-            for( int i = 0 ; i < 1024 ; i++ ){
-                qDebug() << data1[i][0];
-            }
-*/
-            // get data t2,BS2->UE2 Rx3,4,all channel
+            // get data t2,all channel
             for (int i = 0;i<4;i++){
                 for(int j=0;j<8;j++){
                     mat48_2_re[i][j]=data1[i*256+j + 64*t+ 64 + 8*f +32 ][0];
@@ -513,7 +500,7 @@ void QPSK3::sys_function(){
             }
             hermitian( 2,8,mat28_1_re,mat28_1_im, mat82_tmp_re,mat82_tmp_im );//h
             Matrix_mult282(mat28_1_re,mat28_1_im, mat82_tmp_re,mat82_tmp_im, mat22_tmp_re,mat22_tmp_im);
-            chol_inv22(mat22_tmp_re,mat22_tmp_im,mat22_inv_re,mat22_inv_im);//22
+            chol_inv22(mat22_tmp_re,mat22_tmp_im,mat22_inv_re,mat22_inv_im);
             Matrix_mult822(mat82_tmp_re,mat82_tmp_im, mat22_inv_re,mat22_inv_im, w82_re,w82_im);//w82
 
             double norm4 = 0;
@@ -532,16 +519,15 @@ void QPSK3::sys_function(){
             Matrix_mult482(mat48_2_re,mat48_2_im,w82_re,w82_im,hw42_re_rx4,hw42_im_rx4);//hw
 
 
-            //BS1- > UE1
+            //rx2
             // get data t1
-            for (int i = 0;i<2;i++){//first 2 rows
+            for (int i = 0;i<2;i++){
                 for(int j=0;j<8;j++){
                     mat28_1_re[i][j]=data1[i*256+j + 64*t + 8*f ][0];
                     mat28_1_im[i][j]=data1[i*256+j + 64*t + 8*f  ][1];
                 }
             }
-
-            // get data t2, all channel
+            // get data t2
             for (int i = 0;i<4;i++){
                 for(int j=0;j<8;j++){
                     mat48_2_re[i][j]=data1[i*256+j + 64*t+ 64 + 8*f ][0];
@@ -564,11 +550,12 @@ void QPSK3::sys_function(){
                     w82_im[i][j]  /= norm2;
                 }
             }
-
             qDebug()<<"norm2" << norm2;
             qDebug()<<"norm4" << norm4;
 
             Matrix_mult482(mat48_2_re,mat48_2_im,w82_re,w82_im,hw42_re,hw42_im);//hw
+
+
             qDebug()<<"rx2 re";
             for( int i = 0 ; i < 4 ; i++ ){
                 qDebug() << hw42_re[i][0]  << hw42_re[i][1]  ;
@@ -586,23 +573,31 @@ void QPSK3::sys_function(){
                 qDebug() << hw42_im_rx4[i][0]  << hw42_im_rx4[i][1]   ;
             }
 
-            Matrix_mult482(mat48_2_re,mat48_2_im,w82_re,w82_im,hw42_re,hw42_im);//hw
+
             for( int i = 0 ; i < 4 ; i++ ){
                 for( int j = 0 ; j < 2 ; j++){
-                    hw42_re[i][j] += hw42_re_rx4[i][j];
-                    hw42_im[i][j] += hw42_im_rx4[i][j];
+                    hw42_re_rx4[i][j] += hw42_re[i][j];
+                    hw42_im_rx4[i][j] += hw42_im[i][j];
                 }
             }
 
             for( int i = 0 ; i < 4 ; i++ ){
                 for( int j = 0 ; j < 2 ; j++ ){
-                    hw42_re[i][j]  *= norm2;
-                    hw42_im[i][j]  *= norm2;
+                    hw42_re_rx4[i][j]  *= norm4;
+                    hw42_im_rx4[i][j]  *= norm4;
                 }
+            }
+            qDebug()<<"rx4 re";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw42_re_rx4[i][0]  << hw42_re_rx4[i][1]  ;
+
+            }qDebug()<<"rx4 im";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw42_im_rx4[i][0]  << hw42_im_rx4[i][1]   ;
             }
 /*
             // jiu xiangpian
-	
+
             double alpha=0;
 
             for (int i=0;i<2;i++){
@@ -617,22 +612,22 @@ void QPSK3::sys_function(){
                 }
             }
 */
-		//detect 
+        //detect
 
             double hw2_42_re[4][2]={0};
             double hw2_42_im[4][2]={0};
-	for(int i=0;i<4;i++){
-		for(int j=0;j<2;j++){
-			hw2_42_re[i][j] = hw42_re[i][j];
-			hw2_42_im[i][j] = hw42_im[i][j];
-		}
-	}
-        hw2_42_re[1][1]=(hw42_re[1][1]*hw42_re[0][0]+hw42_im[1][1]*hw42_im[0][0])/(hw42_re[0][0]*hw42_re[0][0]+hw42_im[0][0]*hw42_im[0][0]);
-        hw2_42_im[1][1]=(hw42_re[1][1]*hw42_im[0][0]-hw42_im[0][0]*hw42_re[0][0])/(hw42_re[0][0]*hw42_re[0][0]+hw42_im[0][0]*hw42_im[0][0]);
+    for(int i=0;i<4;i++){
+        for(int j=0;j<2;j++){
+            hw2_42_re[i][j] = hw42_re_rx4[i][j];
+            hw2_42_im[i][j] = hw42_im_rx4[i][j];
+        }
+    }
+        hw2_42_re[2][0]=(hw42_re_rx4[2][0]*hw42_re_rx4[3][1]+hw42_im_rx4[2][0]*hw42_im_rx4[3][1])/(hw42_re_rx4[3][1]*hw42_re_rx4[3][1]+hw42_im_rx4[3][1]*hw42_im_rx4[3][1]);
+        hw2_42_im[2][0]=(hw42_re_rx4[2][0]*hw42_im_rx4[3][1]-hw42_im_rx4[2][0]*hw42_re_rx4[3][1])/(hw42_re_rx4[3][1]*hw42_re_rx4[3][1]+hw42_im_rx4[3][1]*hw42_im_rx4[3][1]);
 
-        hw2_42_re[1][0]=(hw42_re[1][0]*hw42_re[0][0]+hw42_im[1][0]*hw42_im[0][0])/(hw42_re[0][0]*hw42_re[0][0]+hw42_im[0][0]*hw42_im[0][0]);
-        hw2_42_im[1][0]=(hw42_re[1][0]*hw42_im[0][0]-hw42_im[1][0]*hw42_re[0][0])/(hw42_re[0][0]*hw42_re[0][0]+hw42_im[0][0]*hw42_im[0][0]);
-          
+        hw2_42_re[2][1]=(hw42_re_rx4[2][1]*hw42_re_rx4[3][1]+hw42_im_rx4[2][1]*hw42_im_rx4[3][1])/(hw42_re_rx4[3][1]*hw42_re_rx4[3][1]+hw42_im_rx4[3][1]*hw42_im_rx4[3][1]);
+        hw2_42_im[2][1]=(hw42_re_rx4[2][1]*hw42_im_rx4[3][1]-hw42_im_rx4[2][1]*hw42_re_rx4[3][1])/(hw42_re_rx4[3][1]*hw42_re_rx4[3][1]+hw42_im_rx4[3][1]*hw42_im_rx4[3][1]);
+
             //get x
 
             double x_re[2][1];
@@ -651,8 +646,8 @@ void QPSK3::sys_function(){
             //y = hw*x
             Matrix_mult421(hw2_42_re,hw2_42_im,x_re,x_im,y41_re,y41_im);
 
-            new_star[cnt_newstar][0] = y41_re[1][0];
-            new_star[cnt_newstar++][1] = y41_im[1][0];
+            new_star[cnt_newstar][0] = y41_re[2][0];
+            new_star[cnt_newstar++][1] = y41_im[2][0];
 
             if(cnt_newstar == 120){
                 cnt_newstar = 0;
@@ -661,6 +656,146 @@ void QPSK3::sys_function(){
     }
 
 }
+
+/*
+
+     for( int t = 0 ; t < 3 ; t++){//time
+        for(int f = 0 ; f < 4 ; f ++){//freq
+            //rx2
+            for (int i = 0;i<2;i++){
+                for(int j=0;j<8;j++){
+                    mat28_1_re[i][j]=data1[i*256+j + 64*t + 8*f ][0];
+                    mat28_1_im[i][j]=data1[i*256+j + 64*t + 8*f  ][1];
+                }
+            }
+            // get data t2
+            for (int i = 0;i<4;i++){
+                for(int j=0;j<8;j++){
+                    mat48_2_re[i][j]=data1[i*256+j + 64*t+ 64 + 8*f ][0];
+                    mat48_2_im[i][j]=data1[i*256+j + 64*t  + 64 + 8*f  ][1];
+                }
+            }
+            hermitian( 2,8,mat28_1_re,mat28_1_im, mat82_tmp_re,mat82_tmp_im );//h
+            Matrix_mult282(mat28_1_re,mat28_1_im, mat82_tmp_re,mat82_tmp_im, mat22_tmp_re,mat22_tmp_im);
+            chol_inv22(mat22_tmp_re,mat22_tmp_im,mat22_inv_re,mat22_inv_im);
+            Matrix_mult822(mat82_tmp_re,mat82_tmp_im, mat22_inv_re,mat22_inv_im, w82_re,w82_im);//w82
+            double norm2 = 0;
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 2 ; j++ ){
+                    norm2+= w82_re[i][j]*w82_re[i][j]+w82_im[i][j]*w82_im[i][j];
+                }
+            }
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 2 ; j++ ){
+                    w82_re[i][j]  /= norm2;
+                    w82_im[i][j]  /= norm2;
+                }
+            }
+            Matrix_mult482(mat48_2_re,mat48_2_im,w82_re,w82_im,hw42_re_rx2,hw42_im_rx2);//hw
+
+            //rx4
+            // get data t1
+            for (int i = 2;i<4;i++){
+                for(int j=0;j<8;j++){
+                    mat28_1_re[i-2][j]=data1[i*256+j + 64*t + 8*f +32][0];
+                    mat28_1_im[i-2][j]=data1[i*256+j + 64*t + 8*f  +32][1];
+                }
+            }
+            // get data t2
+            for (int i = 0;i<4;i++){
+                for(int j=0;j<8;j++){
+                    mat48_2_re[i][j]=data1[i*256+j + 64*t+ 64 + 8*f +32 ][0];
+                    mat48_2_im[i][j]=data1[i*256+j + 64*t  + 64 + 8*f  +32][1];
+                }
+            }
+            hermitian( 2,8,mat28_1_re,mat28_1_im, mat82_tmp_re,mat82_tmp_im );//h
+            Matrix_mult282(mat28_1_re,mat28_1_im, mat82_tmp_re,mat82_tmp_im, mat22_tmp_re,mat22_tmp_im);
+            chol_inv22(mat22_tmp_re,mat22_tmp_im,mat22_inv_re,mat22_inv_im);
+            Matrix_mult822(mat82_tmp_re,mat82_tmp_im, mat22_inv_re,mat22_inv_im, w82_re,w82_im);//w82
+            double norm4 = 0;
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 2 ; j++ ){
+                    norm4 += w82_re[i][j]*w82_re[i][j]+w82_im[i][j]*w82_im[i][j];
+                }
+            }
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 2 ; j++ ){
+                    w82_re[i][j]  /= norm4;
+                    w82_im[i][j]  /= norm4;
+                }
+            }
+            qDebug()<<"norm2" << norm2;
+            qDebug()<<"norm4" << norm4;
+
+
+            Matrix_mult482(mat48_2_re,mat48_2_im,w82_re,w82_im,hw42_re,hw42_im);//hw
+            qDebug()<<"re";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw42_re[i][0]  << hw42_re[i][1]  ;
+
+            }qDebug()<<"im";
+            for( int i = 0 ; i < 4 ; i++ ){
+                qDebug() << hw42_im[i][0]  << hw42_im[i][1]   ;
+            }
+
+
+
+            for( int i = 0 ; i < 4 ; i++ ){
+                for( int j = 0 ; j < 2 ; j++){
+                    hw42_re[i][j] += hw42_re_rx2[i][j];
+                    hw42_im[i][j] += hw42_im_rx2[i][j];
+                }
+            }
+
+            for( int i = 0 ; i < 4 ; i++ ){
+                for( int j = 0 ; j < 2 ; j++ ){
+                    hw42_re[i][j]  *= norm4;
+                    hw42_im[i][j]  *= norm4;
+                }
+            }
+            // jiu xiangpian
+            double alpha=0;
+
+            for (int i=0;i<2;i++){
+                alpha += 0.5 * atan(hw42_im[i+2][i]/hw42_re[i+2][i]);
+
+            }
+            double hw2_42_re[4][2];
+            double hw2_42_im[4][2];
+            for(int i = 0 ; i <4  ; i++ ){
+                for( int j = 0 ; j < 2 ; j++ ){
+                    mult(cos(alpha),-sin(alpha),hw42_re[i][j],hw42_im[i][j],&hw2_42_re[i][j],&hw2_42_im[i][j]);
+                }
+            }
+
+            double x_re[2][1];
+            double x_im[2][1];
+            double y41_re[4][1];
+            double y41_im[4][1];
+
+            for( int ip = 0 ; ip < 2 ; ip++ ){
+                x_re[ip][0] = pilot[cnt_pilot][0];
+                x_im[ip][0] = pilot[cnt_pilot++][1];
+                if(cnt_pilot == 1200){
+                    cnt_pilot = 0;
+                }
+            }
+
+            //y = hw*x
+            Matrix_mult421(hw2_42_re,hw2_42_im,x_re,x_im,y41_re,y41_im);
+
+            new_star[cnt_newstar][0] = y41_re[2][0];
+            new_star[cnt_newstar++][1] = y41_im[2][0];
+
+            if(cnt_newstar == 120){
+                cnt_newstar = 0;
+            }
+        }
+    }
+
+*/
+
+
 
 
 int QPSK3::hex2int(char a,char b,char c,char d)
@@ -837,7 +972,7 @@ void QPSK3::myDrawStars(){
         double y = *(pdata+i*2+1);
 
 
-        //qDebug()<< "in my DrawStars, x ,y is " << z<<" , "<<y<<endl;
+//        qDebug()<< "in my DrawStars, x ,y is " << z<<" , "<<y<<endl;
         myDrawPoint(-0.2,y+0.5,z*2,0.02);
         //qDebug() <<"z :" << z <<"y :" << y ;
     }
