@@ -67,7 +67,7 @@ QPSK3::QPSK3(QWidget *parent) :
        sockser_chl1=socket(AF_INET,SOCK_DGRAM,0);
        addrSrv_chl1.sin_addr.s_addr=htonl(INADDR_ANY);
        addrSrv_chl1.sin_family=AF_INET;
-       addrSrv_chl1.sin_port=htons(8004);//server : receive port number
+       addrSrv_chl1.sin_port=htons(8005);//server : receive port number
        bind(sockser_chl1,(sockaddr*)&addrSrv_chl1,sizeof(sockaddr));
 
        id1 = startTimer(100);
@@ -627,11 +627,11 @@ void QPSK3::sys_function(){
 			hw2_42_im[i][j] = hw42_im[i][j];
 		}
 	}
-		hw2_42_re[0][0]=(hw42_re[0][0]*hw42_re[1][1]+hw42_im[0][0]*hw42_im[1][1])/(hw42_re[1][1]*hw42_re[1][1]+hw42_im[1][1]*hw42_im[1][1]);
-		hw2_42_im[0][0]=(hw42_re[0][0]*hw42_im[1][1]-hw42_im[0][0]*hw42_re[1][1])/(hw42_re[1][1]*hw42_re[1][1]+hw42_im[1][1]*hw42_im[1][1]);
+        hw2_42_re[1][1]=(hw42_re[1][1]*hw42_re[0][0]+hw42_im[1][1]*hw42_im[0][0])/(hw42_re[0][0]*hw42_re[0][0]+hw42_im[0][0]*hw42_im[0][0]);
+        hw2_42_im[1][1]=(hw42_re[1][1]*hw42_im[0][0]-hw42_im[0][0]*hw42_re[0][0])/(hw42_re[0][0]*hw42_re[0][0]+hw42_im[0][0]*hw42_im[0][0]);
 
-		hw2_42_re[0][1]=(hw42_re[0][1]*hw42_re[1][1]+hw42_im[0][1]*hw42_im[1][1])/(hw42_re[1][1]*hw42_re[1][1]+hw42_im[1][1]*hw42_im[1][1]);
-		hw2_42_im[0][1]=(hw42_re[0][1]*hw42_im[1][1]-hw42_im[0][1]*hw42_re[1][1])/(hw42_re[1][1]*hw42_re[1][1]+hw42_im[1][1]*hw42_im[1][1]);
+        hw2_42_re[1][0]=(hw42_re[1][0]*hw42_re[0][0]+hw42_im[1][0]*hw42_im[0][0])/(hw42_re[0][0]*hw42_re[0][0]+hw42_im[0][0]*hw42_im[0][0]);
+        hw2_42_im[1][0]=(hw42_re[1][0]*hw42_im[0][0]-hw42_im[1][0]*hw42_re[0][0])/(hw42_re[0][0]*hw42_re[0][0]+hw42_im[0][0]*hw42_im[0][0]);
           
             //get x
 
@@ -651,8 +651,8 @@ void QPSK3::sys_function(){
             //y = hw*x
             Matrix_mult421(hw2_42_re,hw2_42_im,x_re,x_im,y41_re,y41_im);
 
-            new_star[cnt_newstar][0] = y41_re[0][0];
-            new_star[cnt_newstar++][1] = y41_im[0][0];
+            new_star[cnt_newstar][0] = y41_re[1][0];
+            new_star[cnt_newstar++][1] = y41_im[1][0];
 
             if(cnt_newstar == 120){
                 cnt_newstar = 0;
