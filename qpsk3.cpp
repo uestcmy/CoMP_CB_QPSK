@@ -1,9 +1,6 @@
 #include "qpsk3.h"
 #include "ui_qpsk3.h"
 
-
-
-
 #include <math.h>
 #include <QDebug>
 #include <stdio.h>
@@ -14,8 +11,6 @@
 #include <QFileInfo>
 #include <QTextCodec>
 #include <QDateTime>
-
-
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -62,16 +57,16 @@ QPSK3::QPSK3(QWidget *parent) :
 
 
 
-       InputManagement();
+    InputManagement();
        size_chl2=sizeof(sockaddr_in);
        sockser_chl1=socket(AF_INET,SOCK_DGRAM,0);
        addrSrv_chl1.sin_addr.s_addr=htonl(INADDR_ANY);
        addrSrv_chl1.sin_family=AF_INET;
-       addrSrv_chl1.sin_port=htons(8004);//server : receive port number
+       addrSrv_chl1.sin_port=htons(8001);//server : receive port number
        bind(sockser_chl1,(sockaddr*)&addrSrv_chl1,sizeof(sockaddr));
 
        id1 = startTimer(100);
-
+       pdata = (&new_star[0][0]) ;
 
 }
 
@@ -97,9 +92,8 @@ void QPSK3::resizeGL(int w, int h)
     glLoadIdentity();
     //luPerspective(40.0, (GLfloat)w/(GLfloat)h, 2, 30.0);
     //gluPerspective(40,1.33, 2, 30.0);
-    //glOrtho (-1.5 * ( GLfloat ) w / ( GLfloat ) h, 2.3* ( GLfloat ) w / ( GLfloat ) h, -2, 2, -15.0, 15.0);
-    // glFrustum (-3* ( GLfloat ) w / ( GLfloat ) h, 3* ( GLfloat ) w / ( GLfloat ) h, -2, 2, 5, 10.0);
-      glOrtho (-2.5 * ( GLfloat ) w / ( GLfloat ) h, 2.3* ( GLfloat ) w / ( GLfloat ) h, -1.8, 1.8, -15.0, 15.0);
+    glOrtho (-2.5 * ( GLfloat ) w / ( GLfloat ) h, 2.3* ( GLfloat ) w / ( GLfloat ) h, -1.8, 1.8, -15.0, 15.0);
+    // glFrustum (-2.8* ( GLfloat ) w / ( GLfloat ) h, 2.8* ( GLfloat ) w / ( GLfloat ) h, -2, 2, 5, 10.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -241,10 +235,10 @@ void QPSK3::timerEvent(QTimerEvent *event){
     }
 
     recvfrom(sockser_chl1,&buff,LENGTH_OF_OFDM*3+10,0,(struct sockaddr *)&addrrcv_chl1,(socklen_t*)&size_chl2);//port :7005.3
-
-
+   // qDebug() << buff << endl;
+#ifdef DEBUGPRINT
     qDebug() << "Counter is " << cnt++ << endl;
-
+#endif
     //qDebug() << buff << endl;
 
 #ifdef operation
@@ -263,8 +257,9 @@ void QPSK3::timerEvent(QTimerEvent *event){
        buff[position] = buff[position+3];
        buff[position+3] = tmp;
     }//for
-    //qDebug() << buff << endl;
-
+   #ifdef DEBUGPRINT
+    qDebug() <<  buff << endl;
+#endif
     int position = 12; // avoid the header a0aa 3c20 cccc
     for( int i = 0 ; i < 1200 ; i++){
         for( int j = 0 ; j <8 ;) {
@@ -276,149 +271,21 @@ void QPSK3::timerEvent(QTimerEvent *event){
     for( int i = 0 ; i < 1200 ; i++){
         data1[i][0]=hex2int(map1200[i][0],map1200[i][1],map1200[i][2],map1200[i][3]);
         data1[i][1]=hex2int(map1200[i][4],map1200[i][5],map1200[i][6],map1200[i][7]);
-        //qDebug() << data1[i][0] << data1[i][1] ;//<<data2[i][0] <<data2[i][1] <<endl;
-    }//for i
 
-    sys_function();//data >>   function >> HWS
+#ifdef DEBUGPRINT
 
-    double pilotH11[200][2] = {0};
-    int cntH11 = 0;
-    for( int i = 0 ; i < 1200 ; i++){
-        if(i % 6 == 0){//position for the pilot H11
-            pilotH11[cntH11][0] = data1[i][0];
-            pilotH11[cntH11][1] = data1[i][1];
-            pilot2[cntH11].value = sqrt(data1[i][0]*data1[i][0]+data1[i][1]*data1[i][1]);
-            cntH11 += 1;
-        }//if
-    }
-    for( int i = 0 ; i < 200 ; i++){
-        for( int j = i+1 ; j < 200 ; j++){
-            if( pilot2[i].value - pilot2[j].value  < 1e-7 ){
-                struct pilotid  tmp = pilot2[i];
-                pilot2[i] = pilot2[j];
-                pilot2[j] = tmp;
-            }
-        }
-    }
-    /*commented by hh
-    for( int i = 0 ; i < 100 ; i++ ){
-        pilotH11[pilot2[i+100].id ][0] = pilotH11[pilot2[i].id][0];
-        pilotH11[pilot2[i+100].id ][1] = pilotH11[pilot2[i].id][1];
-        pilot[pilot2[i+100].id][0] = pilot[pilot2[i].id][0];
-        pilot[pilot2[i+100].id][1] = pilot[pilot2[i].id][1];
-
-        data1[pilot2[i+100].id*6][0] = data1[pilot2[i].id*6][0];
-        data1[pilot2[i+100].id*6][1] = data1[pilot2[i].id*6][1];
-
-        data1[pilot2[i+100].id*6+1][0] = data1[pilot2[i].id*6+1][0];
-        data1[pilot2[i+100].id*6+1][1] = data1[pilot2[i].id*6+1][1];
-
-        data1[pilot2[i+100].id*6+2][0] = data1[pilot2[i].id*6+2][0];
-        data1[pilot2[i+100].id*6+2][1] = data1[pilot2[i].id*6+2][1];
-
-        data1[pilot2[i+100].id*6+3][0] = data1[pilot2[i].id*6+3][0];
-        data1[pilot2[i+100].id*6+3][1] = data1[pilot2[i].id*6+3][1];
-
-        data1[pilot2[i+100].id*6+4][0] = data1[pilot2[i].id*6+4][0];
-        data1[pilot2[i+100].id*6+4][1] = data1[pilot2[i].id*6+4][1];
-
-        data1[pilot2[i+100].id*6+5][0] = data1[pilot2[i].id*6+5][0];
-        data1[pilot2[i+100].id*6+5][1] = data1[pilot2[i].id*6+5][1];
-
-    }
-    */
-
-/*
-    for( int i = 0 ; i < 200 ; i++ ){
-        qDebug() << pilot2[i].value << pilot2[i].id ;
-    }
-*/
-    double H11[200][2] = {0};
-    double absH11[200] = {0};
-    double absH11_6[1200][2] = {0};
-
-
-    //qDebug() << "  ----  ";
-    for( int i = 0 ; i < 200 ; i++ ){
-
-        H11[i][0] = (pilotH11[i][0]*pilot[i*6][0]+pilotH11[i][1]*pilot[i*6][1])/(pilot[i*6][0]*pilot[i*6][0]+pilot[i*6][1]*pilot[i*6][1]);
-        H11[i][1] = (pilotH11[i][1]*pilot[i*6][0]-pilotH11[i][0]*pilot[i*6][1])/(pilot[i*6][0]*pilot[i*6][0]+pilot[i*6][1]*pilot[i*6][1]);
-        //qDebug() << H11[i][0] << H11[i][1]  << "  angle :  "<<atan(H11[i][1]/H11[i][0])<<"pilot"<<pilot[i*6][0]<<"|"<<pilot[i*6][1];
-
-        //qDebug() << "  angle :  "<<atan(H11[i][1]/H11[i][0]);
-        absH11[i] = sqrt(H11[i][0]*H11[i][0] + H11[i][1]*H11[i][1]);
+        qDebug() << data1[i][0] << data1[i][1] ;//<<data2[i][0] <<data2[i][1] <<endl;
+#endif
 
     }//for i
 
-    //interp :edited by hh
-    for(int i=0;i<200;i++){
-        absH11_6[i*6][0] =  H11[i][0];
-        absH11_6[i*6 + 1 ][0] =  H11[i][0];
-        absH11_6[i*6 + 2 ][0] =  H11[i][0];
-        absH11_6[i*6 + 3][0]=  H11[i][0];
-        absH11_6[i*6 + 4 ][0] =  H11[i][0];
-        absH11_6[i*6 + 5 ][0] =  H11[i][0];
-
-        absH11_6[i*6][1] =  H11[i][1];
-        absH11_6[i*6 + 1 ][1] =  H11[i][1];
-        absH11_6[i*6 + 2 ][1] =  H11[i][1];
-        absH11_6[i*6 + 3][1]=  H11[i][1];
-        absH11_6[i*6 + 4 ][1] =  H11[i][1];
-        absH11_6[i*6 + 5 ][1] =  H11[i][1];
-        absH11_6[i*6 + 6 ][1] =  H11[i][1];
-
-        /*
-        absH11_6[i*12][0] =  H11[2*i][0];
-        absH11_6[i*12 + 1 ][0] =  H11[2*i][0];
-        absH11_6[i*12 + 2 ][0] =  H11[2*i][0];
-        absH11_6[i*12 + 3][0]=  H11[2*i][0];
-        absH11_6[i*12 + 4 ][0] =  H11[2*i][0];
-        absH11_6[i*12 + 5 ][0] =  H11[2*i][0];
-        absH11_6[i*12 + 6 ][0] =  H11[2*i][0];
-        absH11_6[i*12 + 7 ][0] =  H11[2*i][0];
-        absH11_6[i*12 + 8][0]=  H11[2*i][0];
-        absH11_6[i*12 + 9 ][0] =  H11[2*i][0];
-        absH11_6[i*12 + 10 ][0] =  H11[2*i][0];
-        absH11_6[i*12 + 11 ][0] =  H11[2*i][0];
-
-        absH11_6[i*12][1] =  H11[2*i][1];
-        absH11_6[i*12 + 1 ][1] =  H11[2*i][1];
-        absH11_6[i*12 + 2 ][1] =  H11[2*i][1];
-        absH11_6[i*12 + 3][1]=  H11[2*i][1];
-        absH11_6[i*12 + 4 ][1] =  H11[2*i][1];
-        absH11_6[i*12 + 5 ][1] =  H11[2*i][1];
-        absH11_6[i*12 + 6 ][1] =  H11[2*i][1];
-        absH11_6[i*12 + 7 ][1] =  H11[2*i][1];
-        absH11_6[i*12 + 8][1]=  H11[2*i][1];
-        absH11_6[i*12 + 9 ][1] =  H11[2*i][1];
-        absH11_6[i*12 + 10 ][1] =  H11[2*i][1];
-        absH11_6[i*12 + 11 ][1] =  H11[2*i][1];
-        */
-    }
 
 
-    // qDebug() << "  H : ---- ";
-    int cntg = 0;
-    double guess[1000][2] = {0};
+   sys_function();//data >>   function >> HWS
 
-    for( int i = 0 ; i < 600 ; i++){
-        if(i%6 != 0){
-            // qDebug() << "  H :  "<<absH11_6[i][0];
-            guess[cntg][0] = (data1[i][0]*absH11_6[i][0]+data1[i][1]*absH11_6[i][1])/(absH11_6[i][0]*absH11_6[i][0]+absH11_6[i][1]*absH11_6[i][1]);
-            //guess[cntg][0] /= 15000;
 
-            guess[cntg][1] = (data1[i][1]*absH11_6[i][0]-data1[i][0]*absH11_6[i][1])/(absH11_6[i][0]*absH11_6[i][0]+absH11_6[i][1]*absH11_6[i][1]);
-            //guess[cntg][1]  /= 15000;
-            cntg++;
-        }//if
-    }//for
 
-    for( int i = 600 ; i < 1200 ; i++ ){
-        guess[i][0] = guess[i-600][0];
-        guess[i][1] = guess[i-600][1];
-    }
-   // pdata = &guess[0][0];
-    pdata = (&new_star[0][0]) ;
+
    //pdata += cnt_pt;
     cnt_pt+=2;
     if(cnt_pt == 100){
@@ -455,204 +322,276 @@ void QPSK3::sys_function(){
     qDebug() << " re , im : " << re  << im;
 */
 
+    COMPLEX mat28_1[2][8];
+    COMPLEX mat28_2[2][8];
 
-    double mat28_1_re[2][8];
-    double mat28_1_im[2][8];
+    COMPLEX mat28_tmp[2][8];
+    COMPLEX mat82_tmp[8][2];
+    COMPLEX mat22_tmp[2][2];
+    COMPLEX mat22_inv[2][2];
+    COMPLEX w82[8][2];
+    COMPLEX hw22[2][2];
+    COMPLEX hw22_rx3[2][2];
+
+    COMPLEX b2[8][2];
+    COMPLEX h2[2][8];
+    COMPLEX b1[8][2];
+    COMPLEX h1[2][8];
+
+    double mat48_1_re[4][8];
+    double mat48_1_im[4][8];
 
     double mat48_2_re[4][8];
     double mat48_2_im[4][8];
 
-    double mat82_tmp_re[8][2];
-    double mat82_tmp_im[8][2];
+    double mat48_tmp_re[4][8];
+    double mat48_tmp_im[4][8];
 
-    double mat22_tmp_re[2][2] = {0};
-    double mat22_tmp_im[2][2] = {0};
+    double mat84_tmp_re[8][4];
+    double mat84_tmp_im[8][4];
 
-    double mat22_inv_re[2][2];
-    double mat22_inv_im[2][2];
+    double mat44_tmp_re[4][4] = {0};
+    double mat44_tmp_im[4][4] = {0};
 
-    double w82_re[8][2];
-    double w82_im[8][2];
+    double mat44_inv_re[4][4];
+    double mat44_inv_im[4][4];
+
+    double w84_re[8][4];
+    double w84_im[8][4];
 
     double hw42_re[4][2];
     double hw42_im[4][2];
 
-    double hw42_re_rx4[4][2];
-    double hw42_im_rx4[4][2];
+    double hw44_re[4][4];
+    double hw44_im[4][4];
 
+    double hw44_re_rx3[4][4];
+    double hw44_im_rx3[4][4];
 
+    //get mat
     for( int t = 0 ; t < 3 ; t++){//time
         for(int f = 0 ; f < 4 ; f ++){//freq
-            //BS2->UE2 Rx3,4
-            for (int i = 2;i<4;i++){//Rx3,4 ,last 2 rows,exclude BS2 to UE1
+            //rx3
+            // get data t1 : mat48_1 of BS2
+            for (int i = 2;i<4;i++){//Rx1-4
                 for(int j=0;j<8;j++){//Tx1-8
-                    mat28_1_re[i-2][j]=data1[i*256+j + 64*t + 8*f +32][0];
-                    mat28_1_im[i-2][j]=data1[i*256+j + 64*t + 8*f  +32][1];
+                    mat28_1[i-2][j].re=data1[i*256+j + 64*t + 8*f +32][0];//3
+                    mat28_1[i-2][j].im=data1[i*256+j + 64*t + 8*f  +32][1];
                 }
             }
+            // get data t2, BS2
+            for (int i = 0;i<2;i++){
+                for(int j=0;j<8;j++){
+                    mat28_2[i][j].re=data1[i*256+j + 64*t+ 64 + 8*f+32 ][0];//4
+                    mat28_2[i][j].im=data1[i*256+j + 64*t  + 64 + 8*f +32 ][1];
+                }
+            }
+
             /*
-            qDebug() << "mat28 :";
-            for( int i = 0 ; i < 2 ; i++ ){
-                for( int j = 0 ; j < 8 ; j++ ){
-                    qDebug() << mat28_1_re[i][j];
-                }
-                qDebug() << endl;
-            }
-
-            qDebug() << "data1 :";
-            for( int i = 0 ; i < 1024 ; i++ ){
-                qDebug() << data1[i][0];
-            }
+            //H'
+            hermitian( 4,8,mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im );
+            //mat48 x  mat84
+            Matrix_mult484(mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im, mat44_tmp_re,mat44_tmp_im);
+            //mat44^-1
+            chol_inv(mat44_tmp_re,mat44_tmp_im,mat44_inv_re,mat44_inv_im);
+            //mat84 x mat44^-1
+            Matrix_mult844(mat84_tmp_re,mat84_tmp_im, mat44_inv_re,mat44_inv_im, w84_re,w84_im);
 */
-            // get data t2,BS2->UE2 Rx3,4,all channel
-            for (int i = 0;i<4;i++){
+            //print_cmat48("4,8",4,8,&mat48_1[0][0]);
+
+            chermitian( 2,2,&mat28_1[0][0],&mat82_tmp[0][0]);
+            //print_cmat("8,4",8,4,&mat84_tmp[0][0]);
+            CMatMult(&mat28_1[0][0],&mat82_tmp[0][0],&mat22_tmp[0][0],2,8,2);
+
+            //print_cmat("4,4",4,4,&mat44_tmp[0][0]);
+            //Matrix_mult484(mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im, mat44_tmp_re,mat44_tmp_im);
+            cinv22(&mat22_tmp[0][0],&mat22_inv[0][0]);
+            CMatMult(&mat82_tmp[0][0], &mat22_inv[0][0],&w82[0][0],8,2,2);
+
+//print_cmat("8,4",4,4,&w84[0][0]);
+            double norm3 = 0;
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 2 ; j++ ){//last 2 columns of w84
+                    norm3 += w82[i][j].re*w82[i][j].re+w82[i][j].im*w82[i][j].im;
+                }
+            }
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 2 ; j++ ){
+                    w82[i][j].re  /= norm3;
+                    w82[i][j].im  /= norm3;
+                }
+            }
+
+            for( int i = 0 ; i < 8 ; i++ ){// first two columns of w
+                for( int j = 0 ; j < 2 ; j ++){
+                b2[i][j] = w82[i][j];
+                }
+            }
+           for( int i = 0 ; i < 2 ; i++ ){// BS2 to UE1
+               for( int j = 0 ; j < 8 ; j ++){
+               h2[i][j] = mat28_2[i][j];
+            }
+        }
+
+           // Matrix_mult484(mat48_2_re,mat48_2_im,w84_re,w84_im,hw44_re_rx3,hw44_im_rx3);
+            CMatMult(&mat28_2[0][0],&w82[0][0],&hw22_rx3[0][0],2,8,2);
+ //print_cmat("hw44  w,4",4,4,&hw44_rx3[0][0]);
+
+#ifdef DEBUGPRINT
+            qDebug() << "Rx3 W:";
+            for( int i = 0 ; i < 8  ; i++ ){
+                qDebug()   << w84_re[i][2] << w84_re[i][3] ;
+            }
+
+            qDebug()  << "\n";
+            for( int i = 0 ; i < 8 ; i++ ){
+                 qDebug() << w84_im[i][2] << w84_im[i][3] ;
+            }
+            qDebug()  << " -----------------\n";
+#endif
+
+            //rx1
+            // get data t1 of UE1 BS1,no information from bs2
+            for (int i = 0;i<2;i++){
                 for(int j=0;j<8;j++){
-                    mat48_2_re[i][j]=data1[i*256+j + 64*t+ 64 + 8*f +32 ][0];
-                    mat48_2_im[i][j]=data1[i*256+j + 64*t  + 64 + 8*f  +32][1];
+                    mat28_1[i][j].re=data1[i*256+j + 64*t + 8*f ][0];//1
+                    mat28_1[i][j].im=data1[i*256+j + 64*t + 8*f  ][1];
                 }
             }
-            hermitian( 2,8,mat28_1_re,mat28_1_im, mat82_tmp_re,mat82_tmp_im );//h
-            Matrix_mult282(mat28_1_re,mat28_1_im, mat82_tmp_re,mat82_tmp_im, mat22_tmp_re,mat22_tmp_im);
-            chol_inv22(mat22_tmp_re,mat22_tmp_im,mat22_inv_re,mat22_inv_im);//22
-            Matrix_mult822(mat82_tmp_re,mat82_tmp_im, mat22_inv_re,mat22_inv_im, w82_re,w82_im);//w82
-
-            double norm4 = 0;
-            for( int i = 0 ; i < 8 ; i++ ){
-                for( int j = 0 ; j < 2 ; j++ ){
-                    norm4 += w82_re[i][j]*w82_re[i][j]+w82_im[i][j]*w82_im[i][j];
-                }
-            }
-            for( int i = 0 ; i < 8 ; i++ ){
-                for( int j = 0 ; j < 2 ; j++ ){
-                    w82_re[i][j]  /= norm4;
-                    w82_im[i][j]  /= norm4;
-                }
-            }
-
-            Matrix_mult482(mat48_2_re,mat48_2_im,w82_re,w82_im,hw42_re_rx4,hw42_im_rx4);//hw
-
-
-            //BS1- > UE1
-            // get data t1
-            for (int i = 0;i<2;i++){//first 2 rows
+            // get data t2 of UE1
+            for (int i = 0;i<2;i++){
                 for(int j=0;j<8;j++){
-                    mat28_1_re[i][j]=data1[i*256+j + 64*t + 8*f ][0];
-                    mat28_1_im[i][j]=data1[i*256+j + 64*t + 8*f  ][1];
+                    mat28_2[i][j].re=data1[i*256+j + 64*t+ 64 + 8*f ][0];//2
+                    mat28_2[i][j].im=data1[i*256+j + 64*t  + 64 + 8*f  ][1];
                 }
             }
-
-            // get data t2, all channel
-            for (int i = 0;i<4;i++){
-                for(int j=0;j<8;j++){
-                    mat48_2_re[i][j]=data1[i*256+j + 64*t+ 64 + 8*f ][0];
-                    mat48_2_im[i][j]=data1[i*256+j + 64*t  + 64 + 8*f  ][1];
-                }
-            }
-            hermitian( 2,8,mat28_1_re,mat28_1_im, mat82_tmp_re,mat82_tmp_im );//h
-            Matrix_mult282(mat28_1_re,mat28_1_im, mat82_tmp_re,mat82_tmp_im, mat22_tmp_re,mat22_tmp_im);
-            chol_inv22(mat22_tmp_re,mat22_tmp_im,mat22_inv_re,mat22_inv_im);
-            Matrix_mult822(mat82_tmp_re,mat82_tmp_im, mat22_inv_re,mat22_inv_im, w82_re,w82_im);//w82
-            double norm2 = 0;
+            chermitian( 2,8,&mat28_1[0][0],&mat82_tmp[0][0]);
+            CMatMult(&mat28_1[0][0],&mat82_tmp[0][0],&mat22_tmp[0][0],2,8,2);
+            //Matrix_mult484(mat48_1_re,mat48_1_im, mat84_tmp_re,mat84_tmp_im, mat44_tmp_re,mat44_tmp_im);
+            cinv22(&mat22_tmp[0][0],&mat22_inv[0][0]);
+            CMatMult(&mat82_tmp[0][0], &mat22_inv[0][0],&w82[0][0],8,2,2);
+            //Matrix_mult844(mat84_tmp_re,mat84_tmp_im, mat44_inv_re,mat44_inv_im, w84_re,w84_im);
+            double norm1 = 0;
             for( int i = 0 ; i < 8 ; i++ ){
-                for( int j = 0 ; j < 2 ; j++ ){
-                    norm2+= w82_re[i][j]*w82_re[i][j]+w82_im[i][j]*w82_im[i][j];
+                for( int j = 0 ; j < 2 ; j++ ){ // forst 2 columns
+                    //norm1 += w84_re[i][j]*w84_re[i][j]+w84_im[i][j]*w84_im[i][j];
+                    norm1 += w82[i][j].re*w82[i][j].re+w82[i][j].im*w82[i][j].im;
                 }
             }
             for( int i = 0 ; i < 8 ; i++ ){
                 for( int j = 0 ; j < 2 ; j++ ){
-                    w82_re[i][j]  /= norm2;
-                    w82_im[i][j]  /= norm2;
+                    w82[i][j].re  /= norm1;
+                    w82[i][j].im  /= norm1;
                 }
             }
-
-            qDebug()<<"norm2" << norm2;
-            qDebug()<<"norm4" << norm4;
-
-            Matrix_mult482(mat48_2_re,mat48_2_im,w82_re,w82_im,hw42_re,hw42_im);//hw
-            qDebug()<<"rx2 re";
-            for( int i = 0 ; i < 4 ; i++ ){
-                qDebug() << hw42_re[i][0]  << hw42_re[i][1]  ;
-
-            }qDebug()<<"rx2 im";
-            for( int i = 0 ; i < 4 ; i++ ){
-                qDebug() << hw42_im[i][0]  << hw42_im[i][1]   ;
-            }
-            qDebug()<<"rx4 re";
-            for( int i = 0 ; i < 4 ; i++ ){
-                qDebug() << hw42_re_rx4[i][0]  << hw42_re_rx4[i][1]  ;
-
-            }qDebug()<<"rx4 im";
-            for( int i = 0 ; i < 4 ; i++ ){
-                qDebug() << hw42_im_rx4[i][0]  << hw42_im_rx4[i][1]   ;
-            }
-
-            Matrix_mult482(mat48_2_re,mat48_2_im,w82_re,w82_im,hw42_re,hw42_im);//hw
-            for( int i = 0 ; i < 4 ; i++ ){
-                for( int j = 0 ; j < 2 ; j++){
-                    hw42_re[i][j] += hw42_re_rx4[i][j];
-                    hw42_im[i][j] += hw42_im_rx4[i][j];
+//BS1
+            for( int i = 0 ; i < 8 ; i++ ){
+                for( int j = 0 ; j < 2 ; j ++){
+                    b1[i][j] = w82[i][j];
                 }
             }
-
-            for( int i = 0 ; i < 4 ; i++ ){
-                for( int j = 0 ; j < 2 ; j++ ){
-                    hw42_re[i][j]  *= norm2;
-                    hw42_im[i][j]  *= norm2;
-                }
+           for( int i = 0 ; i < 2 ; i++ ){
+               for( int j = 0 ; j < 8 ; j ++){
+                   h1[i][j] = mat28_2[i][j];//2
             }
-/*
-            // jiu xiangpian
-	
-            double alpha=0;
+        }
 
-            for (int i=0;i<2;i++){
-                alpha += 0.5 * atan(hw42_im[i][i]/hw42_re[i][i]);
+            //CMatMult(&mat28_2[0][0],&w82[0][0], &hw22[0][0],2,8,2);
 
-            }
-            double hw2_42_re[4][2];
-            double hw2_42_im[4][2];
-            for(int i = 0 ; i < 4 ; i++ ){
-                for( int j = 0 ; j < 2 ; j++ ){
-                    mult(cos(alpha),-sin(alpha),hw42_re[i][j],hw42_im[i][j],&hw2_42_re[i][j],&hw2_42_im[i][j]);
-                }
-            }
-*/
-		//detect 
 
-            double hw2_42_re[4][2]={0};
-            double hw2_42_im[4][2]={0};
-	for(int i=0;i<4;i++){
-		for(int j=0;j<2;j++){
-			hw2_42_re[i][j] = hw42_re[i][j];
-			hw2_42_im[i][j] = hw42_im[i][j];
-		}
-	}
-		hw2_42_re[0][0]=(hw42_re[0][0]*hw42_re[1][1]+hw42_im[0][0]*hw42_im[1][1])/(hw42_re[1][1]*hw42_re[1][1]+hw42_im[1][1]*hw42_im[1][1]);
-		hw2_42_im[0][0]=(hw42_re[0][0]*hw42_im[1][1]-hw42_im[0][0]*hw42_re[1][1])/(hw42_re[1][1]*hw42_re[1][1]+hw42_im[1][1]*hw42_im[1][1]);
+            double x_re[4][1]={0};
+            double x_im[4][1]={0};
+            COMPLEX send[2][1];
 
-		hw2_42_re[0][1]=(hw42_re[0][1]*hw42_re[1][1]+hw42_im[0][1]*hw42_im[1][1])/(hw42_re[1][1]*hw42_re[1][1]+hw42_im[1][1]*hw42_im[1][1]);
-		hw2_42_im[0][1]=(hw42_re[0][1]*hw42_im[1][1]-hw42_im[0][1]*hw42_re[1][1])/(hw42_re[1][1]*hw42_re[1][1]+hw42_im[1][1]*hw42_im[1][1]);
-          
-            //get x
+            COMPLEX recv[2][1];
+            COMPLEX recv1[2][1];
+            COMPLEX recv2[2][1];
+            COMPLEX recv3[2][1];
+            COMPLEX recv4[2][1];
 
-            double x_re[2][1];
-            double x_im[2][1];
+            COMPLEX c1[2][2];
+            COMPLEX c2[2][2];
+            COMPLEX c1_H[2][2];
+            COMPLEX c2_H[2][2];
+
+            COMPLEX cchinv[2][2];
+            COMPLEX g[2][2];
+            COMPLEX cch[2][2];
+
+
+
+
             double y41_re[4][1];
             double y41_im[4][1];
-
-            for( int ip = 0 ; ip < 2 ; ip++ ){
-                x_re[ip][0] = pilot[cnt_pilot][0];
-                x_im[ip][0] = pilot[cnt_pilot++][1];
+            for( int ip = 0 ; ip < 2 ; ip++ ){//s1
+                send[ip][0].re = pilot[cnt_pilot][0];
+                send[ip][0].im = pilot[cnt_pilot++][1];
                 if(cnt_pilot == 1200){
                     cnt_pilot = 0;
                 }
             }
 
-            //y = hw*x
-            Matrix_mult421(hw2_42_re,hw2_42_im,x_re,x_im,y41_re,y41_im);
+            CMatMult(&h1[0][0],&b1[0][0],&c1[0][0],2,8,2);
 
-            new_star[cnt_newstar][0] = y41_re[0][0];
-            new_star[cnt_newstar++][1] = y41_im[0][0];
+
+            cinv22(&c1[0][0],&cchinv[0][0]);
+            //print_cmat("HB",2,2,&hb[0][0]);
+            CMatMult(&c1[0][0],&send[0][0],&recv1[0][0],2,2,1);
+/*
+            qDebug()<< "recv1 is " << recv1[0][0] .re << recv1[0][0].im ;
+            qDebug()<< "recv1 is " << recv1[1][0] .re << recv1[1][0].im ;
+*/
+            for( int ip = 0 ; ip < 2 ; ip++ ){//s1
+                send[ip][0].re = pilot[cnt_pilot][0];
+                send[ip][0].im = pilot[cnt_pilot++][1];
+                if(cnt_pilot == 1200){
+                    cnt_pilot = 0;
+                }
+            }
+
+            CMatMult(&h2[0][0],&b2[0][0],&c2[0][0],2,8,2);
+            //print_cmat("c1",2,2,&c1[0][0]);
+            //print_cmat("c2",2,2,&c2[0][0]);
+
+
+            CMatMult(&c2[0][0],&send[0][0],&recv2[0][0],2,2,1);
+          //  qDebug()<< "recv2 is " << recv2[0][0] .re << recv2[0][0].im ;
+           // qDebug()<< "recv2 is " << recv2[1][0] .re << recv2[1][0].im ;
+
+
+            chermitian(2,2,&c2[0][0],&c2_H[0][0]);//
+            chermitian(2,2,&c1[0][0],&c1_H[0][0]);//
+
+            CMatMult(&c2[0][0],&c2_H[0][0],&cch[0][0],2,2,2);
+
+
+            CMatMult(&c1_H[0][0],&cchinv[0][0],&g[0][0],2,2,2);//get g
+
+            CMatMult(&cchinv [0][0],&recv1[0][0],&recv3[0][0],2,2,1);//get g
+            CMatMult(&cchinv[0][0],&recv2[0][0],&recv4[0][0],2,2,1);//get g
+
+            qDebug()<< "recv3 is " << recv3[0][0] .re << recv3[0][0].im ;
+            qDebug()<< "recv3 is " << recv3[1][0] .re << recv3[1][0].im ;
+
+            qDebug()<< "recv4 is " << recv4[0][0] .re << recv4[0][0].im ;
+            qDebug()<< "recv4 is " << recv4[1][0] .re << recv4[1][0].im ;
+
+
+
+
+            new_star[cnt_newstar][0] = recv3[0][0].re+recv4[0][0].re;
+            new_star[cnt_newstar][1] = recv3[0][0].im+recv4[0][0].im;
+        //     new_star[cnt_newstar][0] /= 4*1e6;
+          //  new_star[cnt_newstar][1] /= 4*1e6;
+            qDebug()<< "recv 4, x ,y is " <<   recv4[0][0].re <<" , "<<   recv4[0][0].im <<endl;
+
+            cnt_newstar++;
+            new_star[cnt_newstar][0] =recv3[1][0].re+recv4[1][0].re;
+            new_star[cnt_newstar][1] = recv3[1][0].im+recv4[1][0].im;
+        //    new_star[cnt_newstar][0] /= 4*1e6;
+          //   new_star[cnt_newstar][1] /= 4*1e6;
+            cnt_newstar++;
+
 
             if(cnt_newstar == 120){
                 cnt_newstar = 0;
@@ -832,10 +771,14 @@ double QPSK3::char2int(char *str){
 
 void QPSK3::myDrawStars(){
 
-    for( int i = 0  ; i < 1000 ; i++ ){
-        double z = (*(pdata+i*2+0));
-        double y = *(pdata+i*2+1);
+    for( int i = 0  ; i < 120 ; i++ ){
+/*
+        double z = (*(pdata+i*2+0))/3*1e8;
+        double y = *(pdata+i*2+1)/3*1e8;
+*/
 
+        double z = (*(pdata+i*2+0)) ;
+        double y = *(pdata+i*2+1);
 
         //qDebug()<< "in my DrawStars, x ,y is " << z<<" , "<<y<<endl;
         myDrawPoint(-0.2,y+0.5,z*2,0.02);
